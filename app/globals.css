@@ -1,0 +1,49 @@
+@import url('https://fonts.googleapis.com/css2?family=Marcellus&family=Poppins:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Your CSS variables (safe to keep) */
+:root {
+  --background: #e8e8f5;
+  --foreground: #1a1a2e;
+  --card: #ffffff;
+  --card-foreground: #1a1a2e;
+  --primary: #1a1a2e;
+  --primary-foreground: #ffffff;
+  --secondary: #7a8ba8;
+  --secondary-foreground: #ffffff;
+  --accent: #00d4ff;
+  --accent-foreground: #1a1a2e;
+  --border: #d0d0e0;
+  --input: #7a8ba8;
+  --ring: #1a1a2e;
+}
+
+.dark {
+  --background: #0f1419;
+  --foreground: #ffffff;
+  --card: #1a2332;
+  --card-foreground: #ffffff;
+  --primary: #1a2332;
+  --primary-foreground: #ffffff;
+  --secondary: #7a8ba8;
+  --secondary-foreground: #ffffff;
+  --accent: #00d4ff;
+  --accent-foreground: #1a1a2e;
+  --border: #2a3a4a;
+  --input: #7a8ba8;
+  --ring: #ffffff;
+}
+
+/* Base layer using Tailwind */
+@layer base {
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+}
