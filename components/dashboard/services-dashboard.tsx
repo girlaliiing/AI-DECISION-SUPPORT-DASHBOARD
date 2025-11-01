@@ -79,16 +79,21 @@ export default function ServicesDashboard({ title }: ServicesDashboardProps) {
   const [civilStatusTotals, setCivilStatusTotals] = useState<{ name: string; value: number }[]>([])
   const [civilColorMap, setCivilColorMap] = useState<Record<string, string>>({})
 
-  // ✅ NEW STATE for Family Planning
+  // NEW STATE for Family Planning
   const [familyPlanningTotals, setFamilyPlanningTotals] = useState<{ name: string; value: number }[]>([])
 
-  // ✅ Religion and Community Group states
+  // Religion and Community Group states
   const [religionTotals, setReligionTotals] = useState<{ name: string; value: number }[]>([])
   const [religionPerPurok, setReligionPerPurok] = useState<any[]>([])
 
   const [communityGroupTotals, setCommunityGroupTotals] = useState<{ name: string; value: number }[]>([])
   const [communityGroupPerPurok, setCommunityGroupPerPurok] = useState<any[]>([])
 
+  // Educational Attainment state
+  const [educationTotals, setEducationTotals] = useState<{ name: string; value: number }[]>([])
+
+  const [occupationTotals, setOccupationTotals] = useState<any[]>([])
+  const [occupationPerPurok, setOccupationPerPurok] = useState<any[]>([])
 
   useEffect(() => {
     const fetchData = async () => {
@@ -136,7 +141,7 @@ export default function ServicesDashboard({ title }: ServicesDashboardProps) {
         const fp = json.familyPlanningTotals || []
         setFamilyPlanningTotals(fp)
 
-        // ✅ religion + community group robust parsing (INSIDE try block)
+        // religion + community group robust parsing
         const tryParseArray = (val: any) => {
           if (!val) return []
           if (Array.isArray(val)) return val
@@ -160,10 +165,25 @@ export default function ServicesDashboard({ title }: ServicesDashboardProps) {
         const cgPer = tryParseArray(json.communityGroupPerPurok || json.community_group_per_purok)
         setCommunityGroupTotals(cg)
         setCommunityGroupPerPurok(cgPer)
+
+        // Educational Attainment (moved inside try block)
+        const edu = tryParseArray(
+          json.educationTotals || json.education_totals || json.education || []
+        )
+        setEducationTotals(edu)
+        
+        const occ = tryParseArray(json.occupationTotals || json.occupation_totals || [])
+        setOccupationTotals(occ)
+
+        const occPer = tryParseArray(json.occupationPerPurok || json.occupation_per_purok || [])
+        setOccupationPerPurok(occPer)
+
       } catch (err) {
         console.error("Failed to fetch household_data:", err)
+        setEducationTotals([]) // optional fallback
       }
     }
+
     fetchData()
   }, [])
 
@@ -212,7 +232,7 @@ export default function ServicesDashboard({ title }: ServicesDashboardProps) {
     </>
   )
 
-  // ✅ FIXED Family Planning Bar Chart (no wordBreak; truncation for compact mode)
+  // FIXED Family Planning Bar Chart (no wordBreak; truncation for compact mode)
   const FamilyPlanningBar = ({ compact = false }: { compact?: boolean }) => {
     if (!familyPlanningTotals || familyPlanningTotals.length === 0) {
       return (
@@ -273,7 +293,7 @@ export default function ServicesDashboard({ title }: ServicesDashboardProps) {
     )
   }
 
-  // ✅ Generic Expanded Chart (Pie + Bar) for Religion / Community Group
+  // Generic Expanded Chart (Pie + Bar) for Religion / Community Group
     const DualChartSection = ({
       title,
       id,
@@ -324,7 +344,7 @@ export default function ServicesDashboard({ title }: ServicesDashboardProps) {
                       const midAngle = Number(props.midAngle) || 0
                       const outerR = Number(props.outerRadius) || 85
 
-                      // ✅ Label slightly inside the slice
+                      // Label slightly inside the slice
                       const radius = outerR * 0.65
                       const x = cx + radius * Math.cos(-midAngle * RADIAN)
                       const y = cy + radius * Math.sin(-midAngle * RADIAN)
@@ -421,6 +441,239 @@ export default function ServicesDashboard({ title }: ServicesDashboardProps) {
       )
     }
 
+    // Educational Attainment Horizontal Bar Graph
+    const EducationalAttainmentBar = ({ compact = false }: { compact?: boolean }) => {
+      if (!educationTotals || educationTotals.length === 0) {
+        return (
+          <div className="text-gray-400 text-center pt-10">
+            No educational attainment data available.
+          </div>
+        )
+      }
+
+      const truncate = (s: string, n = 14) => {
+        if (!s) return ""
+        return s.length > n ? `${s.slice(0, n - 1)}…` : s
+      }
+
+      return (
+        <div
+          className={`w-full ${compact ? "h-[300px]" : "h-[500px]"} flex items-center justify-center`}
+        >
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={educationTotals}
+              layout="vertical"
+              margin={{
+                top: 20,
+                right: 30,
+                left: compact ? 20 : 80,
+                bottom: 20,
+              }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="#4b5563" />
+              <XAxis type="number" stroke="#9ca3af" />
+              <YAxis
+                dataKey="name"
+                type="category"
+                width={compact ? 80 : 180}
+                tick={{
+                  fontSize: compact ? 10 : 12,
+                  fill: "#9ca3af",
+                }}
+                tickFormatter={compact ? (v) => truncate(String(v), 14) : undefined}
+              />
+              <Tooltip
+                wrapperStyle={{ fontSize: "0.85rem" }}
+                contentStyle={{ backgroundColor: "#1f2937", border: "none" }}
+              />
+              {!compact && <Legend />}
+              <Bar
+                dataKey="value"
+                name="Count"
+                fill="#8b5cf6"
+                barSize={compact ? 14 : 24}
+                radius={[0, 6, 6, 0]}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )
+    }
+
+    // Occupation Horizontal BarChart
+    const OccupationBar = ({ compact = false }: { compact?: boolean }) => {
+      if (!occupationPerPurok || occupationPerPurok.length === 0) {
+        return (
+          <div className="text-gray-400 text-center pt-10">
+            No occupation data available.
+          </div>
+        )
+      }
+
+      const occupationKeys = [
+        ...new Set(
+          occupationPerPurok.flatMap((item) =>
+            Object.keys(item).filter((key) => key !== "name")
+          )
+        ),
+      ]
+
+      const validKeys = occupationKeys.filter((key) =>
+        occupationPerPurok.some(
+          (item) => typeof item[key] === "number" && item[key] > 0
+        )
+      )
+
+      // Compute Top 10 most common occupations
+      const occupationTotals: Record<string, number> = {}
+      occupationPerPurok.forEach((row) => {
+        validKeys.forEach((key) => {
+          if (typeof row[key] === "number") {
+            occupationTotals[key] = (occupationTotals[key] || 0) + row[key]
+          }
+        })
+      })
+
+      const topOccupations = Object.entries(occupationTotals)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10)
+
+      const truncate = (s: string, n = 12) =>
+        s && s.length > n ? `${s.slice(0, n - 1)}…` : s
+
+      const CustomTooltip = ({ active, payload, label }: any) => {
+        if (active && payload && payload.length) {
+          const MAX_ITEMS = 15
+          const visibleItems = payload.slice(0, MAX_ITEMS)
+          const hiddenCount = payload.length - visibleItems.length
+
+          return (
+            <div
+              style={{
+                backgroundColor: "#1f2937",
+                border: "1px solid #374151",
+                borderRadius: "6px",
+                padding: "6px 8px",
+                color: "#f3f4f6",
+                fontSize: "0.6rem",
+                width: "160px",
+                pointerEvents: "none",
+              }}
+            >
+              <p
+                style={{
+                  marginBottom: "4px",
+                  fontWeight: 600,
+                  fontSize: "0.7rem",
+                  color: "#f9fafb",
+                }}
+              >
+                {label}
+              </p>
+              {visibleItems.map((entry: any, index: number) => (
+                <div
+                  key={`item-${index}`}
+                  style={{
+                    color: entry.color,
+                    marginBottom: "2px",
+                    whiteSpace: "nowrap",
+                    textOverflow: "ellipsis",
+                    overflow: "hidden",
+                  }}
+                >
+                  {`${entry.name} : ${entry.value}`}
+                </div>
+              ))}
+              {hiddenCount > 0 && (
+                <div
+                  style={{
+                    color: "#9ca3af",
+                    marginTop: "4px",
+                    fontStyle: "italic",
+                  }}
+                >
+                  +{hiddenCount} more…
+                </div>
+              )}
+            </div>
+          )
+        }
+        return null
+      }
+
+      return (
+        <div
+          className={`w-full flex ${
+            compact ? "h-72 flex-col" : "flex-col lg:flex-row h-[450px]"
+          } gap-4`}
+        >
+          {/* ====== Bar Graph Section ====== */}
+          <div className="flex-1 flex items-center justify-center">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={occupationPerPurok}
+                layout="vertical"
+                margin={{
+                  top: 10,
+                  right: 40,
+                  left: compact ? 35 : 100,
+                  bottom: 10,
+                }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                <XAxis
+                  type="number"
+                  stroke="#9ca3af"
+                  tick={{ fontSize: 9 }}
+                  domain={[0, "dataMax + 50"]}
+                />
+                <YAxis
+                  dataKey="name"
+                  type="category"
+                  tick={{
+                    fontSize: 9,
+                    fill: "#9ca3af",
+                  }}
+                  tickFormatter={compact ? (v) => truncate(String(v), 10) : undefined}
+                  width={compact ? 40 : 80}
+                />
+                <Tooltip content={<CustomTooltip />} />
+
+                {validKeys.map((key, i) => (
+                  <Bar
+                    key={key}
+                    dataKey={key}
+                    stackId="a"
+                    fill={COLORS_EXTENDED[i % COLORS_EXTENDED.length]}
+                    barSize={compact ? 10 : 20}
+                    radius={[0, 0, 0, 0]}
+                  />
+                ))}
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* ====== Top 10 Occupations (only if expanded) ====== */}
+          {!compact && (
+            <div className="w-full lg:w-1/4 p-3 text-xs bg-transparent text-gray-300">
+              <h3 className="text-sm font-semibold text-white mb-2">
+                Top 10 Occupations
+              </h3>
+              <ol className="space-y-1">
+                {topOccupations.map(([name, count], idx) => (
+                  <li key={idx} className="flex justify-between">
+                    <span className="truncate max-w-[130px]">{name}</span>
+                    <span className="text-gray-400 ml-2">{count}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
+        </div>
+      )
+    }
+    
 
   const loading =
     familiesPerPurok.length === 0 &&
@@ -779,6 +1032,15 @@ export default function ServicesDashboard({ title }: ServicesDashboardProps) {
           />
         </ChartCard>
 
+        {/* Educational Attainment */}
+        <ChartCard id="education" title="Educational Attainment" height="h-72">
+          {activeModal === "education" ? (
+            <EducationalAttainmentBar compact={false} />
+          ) : (
+            <EducationalAttainmentBar compact={true} />
+          )}
+        </ChartCard>
+
         {/* Families vs Households bar chart (full width row) */}
         <ChartCard id="purok-compare" title="Families vs Households (per Purok) - comparison" height="col-span-3 h-72">
           <ResponsiveContainer width="100%" height="100%">
@@ -861,6 +1123,17 @@ export default function ServicesDashboard({ title }: ServicesDashboardProps) {
             )}
           </ChartCard>
         </div>
+
+        {/* Occupation */}
+        <ChartCard id="occupation" title="Occupation" height="h-72">
+          {occupationPerPurok.length > 0 ? (
+            <OccupationBar compact={activeModal !== "occupation"} />
+          ) : (
+            <div className="text-gray-400 text-center pt-10">
+              No occupation data available.
+            </div>
+          )}
+        </ChartCard>
 
       </div>
     </div>
