@@ -95,6 +95,13 @@ export default function ServicesDashboard({ title }: ServicesDashboardProps) {
   const [occupationTotals, setOccupationTotals] = useState<any[]>([])
   const [occupationPerPurok, setOccupationPerPurok] = useState<any[]>([])
 
+  // 4Ps, IPs, Toilet, MRF Segregated, Garden
+  const [fourPsTotals, setFourPsTotals] = useState<{ name: string; value: number }[]>([])
+  const [ipTotals, setIpTotals] = useState<{ name: string; value: number }[]>([])
+  const [toiletTotals, setToiletTotals] = useState<{ name: string; value: number }[]>([])
+  const [mrfTotals, setMrfTotals] = useState<{ name: string; value: number }[]>([])
+  const [gardenTotals, setGardenTotals] = useState<{ name: string; value: number }[]>([])
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -177,6 +184,19 @@ export default function ServicesDashboard({ title }: ServicesDashboardProps) {
 
         const occPer = tryParseArray(json.occupationPerPurok || json.occupation_per_purok || [])
         setOccupationPerPurok(occPer)
+
+                // new datasets (4p's, ip's, toilet, mrf, garden)
+        const fourPs = tryParseArray(json.fourPsTotals || json["4P'S"] || [])
+        const ip = tryParseArray(json.ipTotals || json["IP'S"] || [])
+        const toilet = tryParseArray(json.toiletTotals || json["TOILET"] || [])
+        const mrf = tryParseArray(json.mrfTotals || json["MRF SEGREGATED"] || [])
+        const garden = tryParseArray(json.gardenTotals || json["GARDEN"] || [])
+
+        setFourPsTotals(fourPs)
+        setIpTotals(ip)
+        setToiletTotals(toilet)
+        setMrfTotals(mrf)
+        setGardenTotals(garden)
 
       } catch (err) {
         console.error("Failed to fetch household_data:", err)
@@ -673,6 +693,131 @@ export default function ServicesDashboard({ title }: ServicesDashboardProps) {
         </div>
       )
     }
+
+    // === Five Donut Charts (4Ps, IPs, Toilet, MRF, Garden) ===
+    const FiveDonutSection = ({
+      id,
+      datasets,
+    }: {
+      id: string
+      datasets: { name: string; data: { name: string; value: number }[] }[]
+    }) => {
+      const expanded = activeModal === id
+
+      if (!expanded) {
+        // Minimized view: 1 row of 5 small donuts (already has titles)
+        return (
+          <div className="grid grid-cols-5 gap-4 w-full h-full">
+            {datasets.map((set) => (
+              <div key={set.name} className="flex flex-col items-center justify-center">
+                <div className="text-sm font-medium mb-1 text-gray-300">{set.name}</div>
+                <ResponsiveContainer width="100%" height={130}>
+                  <PieChart>
+                    <Pie
+                      data={set.data}
+                      dataKey="value"
+                      nameKey="name"
+                      innerRadius={25}
+                      outerRadius={45}
+                      labelLine={false}
+                    >
+                      {set.data.map((entry, j) => (
+                        <Cell
+                          key={`${set.name}-${j}`}
+                          fill={COLORS_EXTENDED[j % COLORS_EXTENDED.length]}
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            ))}
+          </div>
+        )
+      }
+
+      // Expanded view
+      return (
+        <div className="flex flex-col gap-8 items-center justify-center w-full h-full scale-[0.9] origin-top">
+          <div className="grid grid-cols-3 gap-4 w-full">
+            {datasets.slice(0, 3).map((set) => (
+              <div
+                key={set.name}
+                className="flex flex-col items-center justify-center"
+                style={{ minHeight: 260 }}
+              >
+                {/* TITLE */}
+                <div className="text-base font-semibold mb-2 text-gray-200">
+                  {set.name}
+                </div>
+
+                {/* CHART */}
+                <ResponsiveContainer width="100%" height={200}>
+                  <PieChart>
+                    <Pie
+                      data={set.data}
+                      dataKey="value"
+                      nameKey="name"
+                      innerRadius={50}
+                      outerRadius={80}
+                      labelLine={false}
+                      label={({ name }) => name}
+                    >
+                      {set.data.map((entry, j) => (
+                        <Cell
+                          key={`${set.name}-${j}`}
+                          fill={COLORS_EXTENDED[j % COLORS_EXTENDED.length]}
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 w-full">
+            {datasets.slice(3).map((set) => (
+              <div
+                key={set.name}
+                className="flex flex-col items-center justify-center"
+                style={{ minHeight: 260 }}
+              >
+                {/* TITLE */}
+                <div className="text-base font-semibold mb-2 text-gray-200">
+                  {set.name}
+                </div>
+
+                {/* CHART */}
+                <ResponsiveContainer width="100%" height={200}>
+                  <PieChart>
+                    <Pie
+                      data={set.data}
+                      dataKey="value"
+                      nameKey="name"
+                      innerRadius={50}
+                      outerRadius={80}
+                      labelLine={false}
+                      label={({ name }) => name}
+                    >
+                      {set.data.map((entry, j) => (
+                        <Cell
+                          key={`${set.name}-${j}`}
+                          fill={COLORS_EXTENDED[j % COLORS_EXTENDED.length]}
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            ))}
+          </div>
+        </div>
+      )
+    }
     
 
   const loading =
@@ -1124,16 +1269,43 @@ export default function ServicesDashboard({ title }: ServicesDashboardProps) {
           </ChartCard>
         </div>
 
-        {/* Occupation */}
-        <ChartCard id="occupation" title="Occupation" height="h-72">
-          {occupationPerPurok.length > 0 ? (
-            <OccupationBar compact={activeModal !== "occupation"} />
-          ) : (
-            <div className="text-gray-400 text-center pt-10">
-              No occupation data available.
-            </div>
-          )}
-        </ChartCard>
+        {/* Occupation and 4Ps / IPs / Toilet / MRF / Garden */}
+        <div className="grid grid-cols-[30%_68%] gap-6 items-start col-span-3">
+          {/* Occupation */}
+          <ChartCard id="occupation" title="Occupation" height="h-72">
+            {occupationPerPurok.length > 0 ? (
+              <OccupationBar compact={activeModal !== "occupation"} />
+            ) : (
+              <div className="text-gray-400 text-center pt-10">
+                No occupation data available.
+              </div>
+            )}
+          </ChartCard>
+
+          {/* 4Ps / IPs / Toilet / MRF / Garden */}
+          <ChartCard id="services" title="Household and Community Participation Indicators" height="h-72">
+            {fourPsTotals.length > 0 ||
+            ipTotals.length > 0 ||
+            toiletTotals.length > 0 ||
+            mrfTotals.length > 0 ||
+            gardenTotals.length > 0 ? (
+              <FiveDonutSection
+                id="services"
+                datasets={[
+                  { name: "4P’S", data: fourPsTotals },
+                  { name: "IP’S", data: ipTotals },
+                  { name: "TOILET", data: toiletTotals },
+                  { name: "MRF SEGREGATED", data: mrfTotals },
+                  { name: "GARDEN", data: gardenTotals },
+                ]}
+              />
+            ) : (
+              <div className="flex items-center justify-center h-full text-gray-400">
+                No data available
+              </div>
+            )}
+          </ChartCard>
+        </div>
 
       </div>
     </div>

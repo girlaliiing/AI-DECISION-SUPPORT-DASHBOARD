@@ -42,7 +42,7 @@ function normalizeFamilyPlanning(v: any) {
   return s.charAt(0).toUpperCase() + s.slice(1)
 }
 
-// ✅ Simpler: just clean string, no grouping
+// Simpler: just clean string, no grouping
 function cleanEducation(v: any) {
   if (v === undefined || v === null) return "Unknown"
   const s = String(v).trim()
@@ -72,6 +72,11 @@ export async function GET() {
             "COMMUNITY GROUP": 1,
             "EDUCATIONAL ATTAINMENT": 1, 
             "OCCUPATION": 1, 
+            "4P'S": 1,
+            "IP'S": 1,
+            TOILET: 1,
+            "MRF SEGREGATED": 1,
+            GARDEN: 1,
             _id: 0,
           },
         }
@@ -91,6 +96,11 @@ export async function GET() {
     const educationCounts: Record<string, number> = {}
     const occupationCounts: Record<string, number> = {}
     const occupationPerPurok: Record<string, Record<string, number>> = {}
+    const fourPsCounts: Record<string, number> = {}
+    const ipCounts: Record<string, number> = {}
+    const toiletCounts: Record<string, number> = {}
+    const mrfCounts: Record<string, number> = {}
+    const gardenCounts: Record<string, number> = {}
 
     let maleTotal = 0
     let femaleTotal = 0
@@ -109,6 +119,11 @@ export async function GET() {
       const communityRaw = normalizeKey(doc["COMMUNITY GROUP"]) ?? "Unknown"
       const eduRaw = cleanEducation(doc["EDUCATIONAL ATTAINMENT"])
       const occupationRaw = normalizeKey(doc["OCCUPATION"]) ?? "Unknown"
+      const fourPsRaw = normalizeKey(doc["4P'S"]) ?? "Unknown"
+      const ipRaw = normalizeKey(doc["IP'S"]) ?? "Unknown"
+      const toiletRaw = normalizeKey(doc["TOILET"]) ?? "Unknown"
+      const mrfRaw = normalizeKey(doc["MRF SEGREGATED"]) ?? "Unknown"
+      const gardenRaw = normalizeKey(doc["GARDEN"]) ?? "Unknown"
 
       // Families & Households
       if (!familySets[purok]) familySets[purok] = new Set()
@@ -155,6 +170,12 @@ export async function GET() {
     occupationPerPurok[purok][occupationRaw] =
       (occupationPerPurok[purok][occupationRaw] || 0) + 1
 
+      // 4P'S, IP'S, TOILET, MRF, GARDEN
+      fourPsCounts[fourPsRaw] = (fourPsCounts[fourPsRaw] || 0) + 1
+      ipCounts[ipRaw] = (ipCounts[ipRaw] || 0) + 1
+      toiletCounts[toiletRaw] = (toiletCounts[toiletRaw] || 0) + 1
+      mrfCounts[mrfRaw] = (mrfCounts[mrfRaw] || 0) + 1
+      gardenCounts[gardenRaw] = (gardenCounts[gardenRaw] || 0) + 1
     })
 
     
@@ -228,6 +249,13 @@ export async function GET() {
       })
     )
 
+      const fourPsTotals = Object.entries(fourPsCounts).map(([k, v]) => ({ name: k, value: v }))
+      const ipTotals = Object.entries(ipCounts).map(([k, v]) => ({ name: k, value: v }))
+      const toiletTotals = Object.entries(toiletCounts).map(([k, v]) => ({ name: k, value: v }))
+      const mrfTotals = Object.entries(mrfCounts).map(([k, v]) => ({ name: k, value: v }))
+      const gardenTotals = Object.entries(gardenCounts).map(([k, v]) => ({ name: k, value: v }))
+
+
     // -------------------- Response --------------------
     return NextResponse.json({
       familiesPerPurok,
@@ -243,6 +271,11 @@ export async function GET() {
       educationTotals, 
       occupationTotals,
       occupationPerPurok: occupationPerPurokArr,
+      fourPsTotals,
+      ipTotals,
+      toiletTotals,
+      mrfTotals,
+      gardenTotals,
     })
   } catch (error) {
     console.error("Error in /api/household_data:", error)
