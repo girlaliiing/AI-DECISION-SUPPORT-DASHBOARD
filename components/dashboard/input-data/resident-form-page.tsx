@@ -95,15 +95,15 @@ export default function ResidentFormPage({ onBack }: ResidentFormPageProps) {
     const payload = {
       _id: editingData.id,
       "SURNAME": editingData.surname,
-      "GIVEN_NAME": editingData.givenName,
-      "MIDDLE_NAME": editingData.middleName,
+      "GIVEN NAME": editingData.givenName,
+      "MIDDLE NAME": editingData.middleName,
       "AGE": editingData.age,
       "SEX": editingData.sex,
       "BIRTHDATE": editingData.birthdate,
       "RELIGION": editingData.religion,
       "OCCUPATION": editingData.occupation,
-      "NUMBER_OF_FAMILIES": editingData.numberOfFamilies,
-      "HOUSEHOLD_NUMBER": editingData.householdNumber,
+      "NUMBER OF FAMILIES": editingData.numberOfFamilies,
+      "HOUSEHOLD NUMBER": editingData.householdNumber,
       "PUROK": selectedPurok,
     }
 

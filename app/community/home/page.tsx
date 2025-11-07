@@ -13,7 +13,7 @@ export default function CommunityHome() {
       <div className="flex items-center gap-3 mb-12">
         <div className="w-20 h-20 relative">
         <Image
-            src="/barangay-tuboran-seal.png"
+            src="/bida-logo.png"
             alt="Barangay Tuboran Logo"
             fill
             className="object-contain"
