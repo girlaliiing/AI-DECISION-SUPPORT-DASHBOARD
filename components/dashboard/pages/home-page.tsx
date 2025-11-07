@@ -12,10 +12,16 @@ export default function HomePage() {
 
         {/* Description */}
         <p className="max-w-6xl text-gray-300 leading-relaxed mb-12">
-          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Lorem ipsum dolor sit amet,
-          consectetur adipiscing elit. Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Lorem ipsum dolor sit amet,
-          consectetur adipiscing elit.
+          Tuboran is a barangay in the municipality of Mawab, Davao de Oro, with a population of
+          3,245 based on the 2020 Census, accounting for 8.19% of the municipality’s total population.
+          As of the 2015 Census, it had 2,766 household residents in 634 households, averaging 4.36
+          members each. The largest age group was 5–9 years old (324 individuals), while those aged
+          80 and above comprised the smallest group (26 individuals). The population is predominantly
+          of working age (15–64), making up 62.11%, while young dependents (0–14) account for
+          33.12% and senior citizens (65+) represent 4.77%, resulting in a total dependency ratio
+          of 61 dependents per 100 working-age residents. The barangay has a median age of 24, indicating
+          a relatively young population. Tuboran has shown steady growth, increasing from 2,366 residents
+          in 1990 to 3,245 in 2020, with a significant annual growth rate of 3.42% from 2015–2020.
         </p>
 
         {/* Vision Section */}
