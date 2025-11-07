@@ -24,10 +24,10 @@ export default function InputDataPage() {
           <div className="w-full h-full bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
             <div className="text-center">
               <h1 className="text-6xl font-marcellus font-light text-white mb-4">Welcome, Admin!</h1>
-              <p className="text-xl text-gray-400 mb-12">How would you like to add your data?</p>
+              <p className="text-xl text-gray-400 mb-12">What would you like to do?</p>
 
               <div className="grid grid-cols-4 gap-8">
-               {/* Fill out form }
+               {/* Access Data */}
                 <button
                   onClick={() => setCurrentModule("form")}
                   className="flex flex-col items-center gap-4 cursor-pointer group"
@@ -37,8 +37,8 @@ export default function InputDataPage() {
                       <path d="M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm10 0h8v8h-8v-8z" />
                     </svg>
                   </div>
-                  <p className="text-white font-poppins font-medium">Fill out form</p>
-                </button>  */}
+                  <p className="text-white font-poppins font-medium">Access Data</p>
+                </button>  
 
                 {/* Upload CSV */}
                 <button
