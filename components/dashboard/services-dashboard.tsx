@@ -14,7 +14,8 @@ import {
   YAxis,
   Tooltip,
 } from "recharts"
-import { Settings, X } from "lucide-react"
+import { ChevronDown, X } from "lucide-react"
+
 
 interface ServicesDashboardProps {
   title: string
@@ -229,7 +230,7 @@ export default function ServicesDashboard({ title }: ServicesDashboardProps) {
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-white font-semibold">{title}</h3>
           <button onClick={() => openModal(id)} className="text-gray-400 hover:text-white">
-            <Settings size={20} />
+            <ChevronDown size={20} />
           </button>
         </div>
         {children}
