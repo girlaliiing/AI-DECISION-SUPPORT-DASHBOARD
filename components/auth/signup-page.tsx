@@ -11,21 +11,46 @@ interface SignupPageProps {
 export default function SignupPage({ onSuccess, onToggle }: SignupPageProps) {
   const [firstName, setFirstName] = useState("")
   const [lastName, setLastName] = useState("")
-  const [email, setEmail] = useState("")
+  const [username, setUsername] = useState("")
+  const [position, setPosition] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (firstName && lastName && email && password) {
-      onSuccess()
+
+    if (!firstName || !lastName || !username || !position || !password) return
+
+    try {
+      const res = await fetch("/api/admin", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          firstName,
+          lastName,
+          username,
+          position,
+          password,
+        }),
+      })
+
+      const data = await res.json()
+
+      if (data.success) {
+        onToggle()
+      } else {
+        alert("Error creating account: " + data.error)
+      }
+    } catch (err) {
+      console.error(err)
     }
   }
 
   return (
-    <div className="w-full max-w-2xl">
-      <div className="relative bg-gray-900 rounded-3xl p-12 shadow-2xl">
-        {/* Exit / Back Button */}
+    <div className="w-full min-h-screen flex items-center justify-center p-4">
+      <div className="relative bg-gray-900 rounded-3xl p-12 shadow-2xl w-full max-w-2xl">
         <button
           type="button"
           onClick={onToggle}
@@ -36,11 +61,10 @@ export default function SignupPage({ onSuccess, onToggle }: SignupPageProps) {
         </button>
 
         <h2 className="text-4xl font-light text-white text-center mb-12">
-          Create a new account
+          Create credentials
         </h2>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* First Name and Last Name */}
           <div className="grid grid-cols-2 gap-4">
             <input
               type="text"
@@ -58,18 +82,23 @@ export default function SignupPage({ onSuccess, onToggle }: SignupPageProps) {
             />
           </div>
 
-          {/* Email input */}
-          <div>
+          <div className="grid grid-cols-2 gap-4">
             <input
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-2 rounded-full bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
+              type="text"
+              placeholder="Username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="px-4 py-2 rounded-full bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
+            />
+            <input
+              type="text"
+              placeholder="Position"
+              value={position}
+              onChange={(e) => setPosition(e.target.value)}
+              className="px-4 py-2 rounded-full bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
             />
           </div>
 
-          {/* Password input */}
           <div className="relative">
             <input
               type={showPassword ? "text" : "password"}
@@ -87,7 +116,6 @@ export default function SignupPage({ onSuccess, onToggle }: SignupPageProps) {
             </button>
           </div>
 
-          {/* Submit button */}
           <button
             type="submit"
             className="w-full py-2 rounded-full bg-white text-gray-900 font-semibold hover:bg-gray-100 transition text-lg"
@@ -95,10 +123,9 @@ export default function SignupPage({ onSuccess, onToggle }: SignupPageProps) {
             Submit
           </button>
 
-          {/* Back to login link */}
           <div className="text-center pt-4">
             <p className="text-gray-400">
-              Already have an account?{" "}
+              Already have credentials?{" "}
               <button
                 type="button"
                 onClick={onToggle}

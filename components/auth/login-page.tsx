@@ -11,14 +11,37 @@ interface LoginPageProps {
 }
 
 export default function LoginPage({ onSuccess, onToggle }: LoginPageProps) {
-  const [email, setEmail] = useState("")
+  const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (email && password) {
-      onSuccess()
+
+    if (!username || !password) return
+
+    try {
+      const res = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username: username,
+          password: password,
+        }),
+      })
+
+      const data = await res.json()
+
+      if (data.success) {
+        onSuccess()
+      } else {
+        alert(data.error || "Login failed")
+      }
+    } catch (err) {
+      console.error(err)
+      alert("Something went wrong")
     }
   }
 
@@ -45,13 +68,13 @@ export default function LoginPage({ onSuccess, onToggle }: LoginPageProps) {
       <div className="flex-[0.9] mr-10">
         <div className="bg-gray-900 rounded-3xl p-11 shadow-2xl">
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Email input */}
+            {/* Username input */}
             <div>
               <input
-                type="email"
-                placeholder="Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                type="username"
+                placeholder="Username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 className="w-full px-4 py-2 rounded-full bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
               />
             </div>
@@ -85,13 +108,13 @@ export default function LoginPage({ onSuccess, onToggle }: LoginPageProps) {
             {/* Sign up link */}
             <div className="text-center pt-4">
               <p className="text-gray-400">
-                Don't have an account?{" "}
+                Don’t have credentials?{" "}
                 <button
                   type="button"
                   onClick={onToggle}
                   className="text-white underline hover:text-gray-200 transition"
                 >
-                  Sign up
+                  Get Access
                 </button>
               </p>
             </div>
