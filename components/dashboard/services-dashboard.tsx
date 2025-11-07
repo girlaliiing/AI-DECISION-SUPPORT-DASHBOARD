@@ -1215,7 +1215,7 @@ export default function ServicesDashboard({ title }: ServicesDashboardProps) {
         </ChartCard>
 
         {/* Civil Status (30%) and Family Planning (70%) side by side like the Gender row */}
-        <div className="grid grid-cols-[30%_70%] gap-6 items-start col-span-3">
+        <div className="grid grid-cols-[30%_68%] gap-6 items-start col-span-3">
           {/* Civil Status */}
           <ChartCard id="civil-status" title="Civil Status" height="h-72">
             <div className="w-full h-full">
