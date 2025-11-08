@@ -68,6 +68,7 @@ export default function InputDataPage() {
 
   const [currentPage, setCurrentPage] = useState(0)
   const [addedFlash, setAddedFlash] = useState(false)
+  const [submitFlash, setSubmitFlash] = useState(false);
 
   const handleInputChange = (
     id: string,
@@ -97,28 +98,31 @@ export default function InputDataPage() {
   }
 
   const handleSubmit = async () => {
-      try {
-        const response = await fetch("/api/new_data", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ residents: forms }),
-        });
+    setSubmitFlash(true);
+    setTimeout(() => setSubmitFlash(false), 600);
 
-        if (!response.ok) {
-          alert("Error saving data");
-          return;
-        }
+    try {
+      const response = await fetch("/api/new_data", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ residents: forms }),
+      });
 
-        const data = await response.json();
-        console.log("Saved:", data);
-
-        alert("Data saved successfully!");
-        router.push("/community");
-      } catch (error) {
-        console.error(error);
-        alert("Error submitting data");
+      if (!response.ok) {
+        alert("Error saving data");
+        return;
       }
-    };
+
+      const data = await response.json();
+      console.log("Saved:", data);
+
+      alert("Data saved successfully!");
+      router.push("/community");
+    } catch (error) {
+      console.error(error);
+      alert("Error submitting data");
+    }
+  };
 
   const handleExit = () => {
     router.back()
@@ -480,7 +484,7 @@ export default function InputDataPage() {
             onClick={handleAddSection}
             className={`px-8 py-3 font-semibold rounded-lg transition-all 
               ${addedFlash 
-                ? "bg-green-500 text-white scale-105" 
+                ? "bg-blue-500 text-white scale-105" 
                 : "bg-white text-slate-900 hover:bg-gray-100"
               }`}
           >
@@ -489,7 +493,11 @@ export default function InputDataPage() {
 
           <button
             onClick={handleSubmit}
-            className="px-8 py-3 bg-white text-slate-900 font-semibold rounded-lg hover:bg-gray-100 transition-colors"
+            className={`px-8 py-3 font-semibold rounded-lg transition-all 
+              ${submitFlash
+                ? "bg-blue-500 text-white scale-105"
+                : "bg-white text-slate-900 hover:bg-gray-100"
+              }`}
           >
             Submit
           </button>

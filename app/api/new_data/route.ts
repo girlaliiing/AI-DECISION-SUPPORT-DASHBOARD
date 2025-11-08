@@ -4,6 +4,20 @@ import clientPromise from "../../../lib/mongodb";
 const DB_NAME = "hosehold_data";
 const COLLECTION = "household_data 2025";
 
+// helper — convert to MM/DD/YYYY
+function formatBirthdate(dateStr: string) {
+  if (!dateStr) return "";
+
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return dateStr; // fallback
+
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  const year = d.getFullYear();
+
+  return `${month}/${day}/${year}`;
+}
+
 export async function POST(req: Request) {
   try {
     const client = await clientPromise;
@@ -20,13 +34,12 @@ export async function POST(req: Request) {
       );
     }
 
-    // ✅ Fetch LATEST household and number of families
+    //Fetch last record for FAMILY + HOUSEHOLD values
     const lastRecord = await collection.findOne(
       {},
       { sort: { "HOUSEHOLD NUMBER": -1 } }
     );
 
-    // ✅ If no record yet → start at 1
     let nextHouseholdNo = lastRecord?.["HOUSEHOLD NUMBER"]
       ? Number(lastRecord["HOUSEHOLD NUMBER"]) + 1
       : 1;
@@ -35,20 +48,19 @@ export async function POST(req: Request) {
       ? Number(lastRecord["NUMBER OF FAMILIES"]) + 1
       : 1;
 
-    // ✅ Each resident has SAME household + family number
     const formattedDocs = residents.map((r) => ({
       PUROK: r.purok ? parseInt(r.purok, 10) : null,
       "NUMBER OF FAMILIES": nextFamiliesNo,
       "HOUSEHOLD NUMBER": nextHouseholdNo,
       SURNAME: r.surname,
-      GIVEN_NAME: r.givenName,
-      MIDDLE_NAME: r.middleName,
+      "GIVEN NAME": r.givenName,
+      "MIDDLE NAME": r.middleName,
       SUFFIX: r.suffix,
       PREFIX: r.prefix,
       AGE: Number(r.age),
       SEX: r.sex,
-      CIVIL_STATUS: r.civilStatus,
-      BIRTHDATE: r.birthdate,
+      "CIVIL STATUS": r.civilStatus,
+      BIRTHDATE: formatBirthdate(r.birthdate),
       BIRTHPLACE: r.birthplace,
       "FAMILY PLANNING": r.familyPlanning,
       RELIGION: r.religion,
@@ -70,7 +82,8 @@ export async function POST(req: Request) {
     return NextResponse.json(
       {
         success: true,
-        inserted: result.insertedCount,
+        insertedCount: result.insertedCount,
+        insertedIds: result.insertedIds,
         householdNumber: nextHouseholdNo,
         numberOfFamilies: nextFamiliesNo,
       },

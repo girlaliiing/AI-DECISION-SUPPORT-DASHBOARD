@@ -3,7 +3,7 @@ import { useState, useEffect } from "react"
 import { Trash2, Edit2, X, Check } from "lucide-react"
 
 interface Resident {
-  id: string
+  _id: string
   numberOfFamilies: string
   householdNumber: string
   surname: string
@@ -40,7 +40,7 @@ export default function ResidentFormPage({ onBack }: ResidentFormPageProps) {
         const purok = item.PUROK ?? 0
 
         const r: Resident = {
-          id: item._id,
+          _id: item._id,
           numberOfFamilies: item["NUMBER OF FAMILIES"] ?? "",
           householdNumber: item["HOUSEHOLD NUMBER"] ?? "",
           surname: item["SURNAME"] ?? "",
@@ -67,33 +67,30 @@ export default function ResidentFormPage({ onBack }: ResidentFormPageProps) {
     fetchResidents()
   }, [])
 
-  // ✅ DELETE FIX - send _id
-  const handleDeleteResident = async (residentId: string) => {
+  /** DELETE — refresh after removing */
+  const handleDeleteResident = async (_id: string) => {
     try {
-      await fetch(`/api/resident_data?_id=${residentId}`, {
-        method: "DELETE",
-      })
-
-      setResidents((prev) => ({
-        ...prev,
-        [selectedPurok]: prev[selectedPurok]?.filter((r) => r.id !== residentId) ?? [],
-      }))
+      await fetch(`/api/resident_data?_id=${_id}`, { method: "DELETE" })
+      await fetchResidents()
     } catch (err) {
       console.error("Error deleting resident:", err)
     }
   }
 
   const handleEditResident = (resident: Resident) => {
-    setEditingId(resident.id)
+    setEditingId(resident._id)
     setEditingData({ ...resident })
   }
 
-  // ✅ SAVE FIX — convert to DB field names
+  /** SAVE — preserves other DB fields */
   const handleSaveEdit = async () => {
     if (!editingData) return
 
+    const old = residents[selectedPurok].find(r => r._id === editingData._id)
+
     const payload = {
-      _id: editingData.id,
+      _id: editingData._id,
+      ...old,
       "SURNAME": editingData.surname,
       "GIVEN NAME": editingData.givenName,
       "MIDDLE NAME": editingData.middleName,
@@ -114,13 +111,7 @@ export default function ResidentFormPage({ onBack }: ResidentFormPageProps) {
         body: JSON.stringify(payload),
       })
 
-      setResidents((prev) => ({
-        ...prev,
-        [selectedPurok]: prev[selectedPurok].map((r) =>
-          r.id === editingId ? editingData : r
-        ),
-      }))
-
+      await fetchResidents()
       setEditingId(null)
       setEditingData(null)
     } catch (err) {
@@ -135,7 +126,6 @@ export default function ResidentFormPage({ onBack }: ResidentFormPageProps) {
 
   const purokList = Array.from({ length: 12 }, (_, i) => i + 1)
   const currentResidents = residents[selectedPurok] ?? []
-
   const allResidents = Object.values(residents).flat() ?? []
 
   const filteredResidents =
@@ -170,11 +160,11 @@ export default function ResidentFormPage({ onBack }: ResidentFormPageProps) {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="px-3 py-2 text-sm bg-gray-800 border border-gray-600
-                     rounded-lg text-white focus:ring-2 focus:ring-blue-400 w-64"
+                    rounded-lg text-white focus:ring-2 focus:ring-blue-400 w-64"
           />
         </div>
 
-        {/* PUROK */}
+        {/* PUROK TABS */}
         <div className="mb-8">
           <div className="grid grid-cols-12 gap-2 mb-4 border-b border-gray-700 pb-4">
             {purokList.map((purok) => (
@@ -221,10 +211,10 @@ export default function ResidentFormPage({ onBack }: ResidentFormPageProps) {
 
               <tbody>
                 {filteredResidents.map((r, idx) => {
-                  const active = editingId === r.id
+                  const active = editingId === r._id
                   return (
                     <tr
-                      key={r.id}
+                      key={r._id}
                       className={`border-b border-gray-700 transition text-xs ${
                         idx % 2 === 0 ? "bg-gray-800" : "bg-gray-850"
                       } hover:bg-gray-750`}
@@ -232,7 +222,7 @@ export default function ResidentFormPage({ onBack }: ResidentFormPageProps) {
                       {active ? (
                         <>
                           {Object.entries(r).map(([key], i) =>
-                            key !== "id" ? (
+                            key !== "_id" ? (
                               <td key={i} className="px-2 py-2">
                                 <input
                                   type="text"
@@ -287,7 +277,7 @@ export default function ResidentFormPage({ onBack }: ResidentFormPageProps) {
                                 <Edit2 size={14} />
                               </button>
                               <button
-                                onClick={() => handleDeleteResident(r.id)}
+                                onClick={() => handleDeleteResident(r._id)}
                                 className="p-1 bg-red-600 text-white rounded hover:bg-red-700"
                               >
                                 <Trash2 size={14} />
