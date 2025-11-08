@@ -13,9 +13,30 @@ export default function UpdateDataPage() {
   const [lastName, setLastName] = useState("")
   const [suffix, setSuffix] = useState("")
 
-  const handleSubmit = () => {
-    router.push("/community/update-data/form")
-  }
+  const handleSubmit = async () => {
+    const res = await fetch("/api/find_family", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        purok: purokNumber,
+        givenName: firstName,
+        middleName,
+        surname: lastName,
+        suffix,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!data.success) {
+      alert(data.error || "Family not found");
+      return;
+    }
+
+    router.push(
+      `/community/update-data/form?family=${data.familyNo}&purok=${data.purokNo}`
+    );
+  };
 
   const handleExit = () => {
     router.back()
@@ -35,7 +56,7 @@ export default function UpdateDataPage() {
             <X size={24} />
           </button>
 
-          <h2 className="text-2xl font-bold text-white mb-1">Enter Purok number:</h2>
+          <h2 className="text-2xl font-bold text-white mb-1">Enter purok number:</h2>
 
           <input
             type="text"
@@ -45,7 +66,7 @@ export default function UpdateDataPage() {
             className="w-full px-4 py-3 bg-gray-600 text-white rounded-lg placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
 
-          <h2 className="text-2xl font-bold text-white mb-4 mt-8">Enter full name:</h2>
+          <h2 className="text-2xl font-bold text-white mb-4 mt-8">Enter full name (Head of the Family):</h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <input
