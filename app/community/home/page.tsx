@@ -24,7 +24,7 @@ export default function CommunityHome() {
       {/* Welcome Section */}
       <div className="text-center mb-16">
         <h1 className="text-6xl font-marcellus font-bold text-slate-800 mb-4">Welcome, folks!</h1>
-        <p className="text-xl text-slate-700">What service would you like to access?</p>
+        <p className="text-xl text-slate-700">What would you like to do?</p>
       </div>
 
       {/* Service Cards */}
