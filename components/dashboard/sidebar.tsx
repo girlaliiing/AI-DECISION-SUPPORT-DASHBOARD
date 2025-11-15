@@ -36,12 +36,12 @@ export default function Sidebar({
     { id: "social", label: "Social Services", icon: Users },
     { id: "environmental", label: "Environmental Services", icon: Leaf },
     { id: "general", label: "General Services", icon: Settings },
-    { id: "map", label: "Barangay Map", icon: Map },
+
+    // ONLY CESIUM USES ROUTER
+    { id: "map", label: "Barangay Map", icon: Map, isRoute: true, path: "/dashboard/map" },
   ];
 
-  const handleLogout = () => {
-    router.push("/");
-  };
+  const handleLogout = () => router.push("/");
 
   return (
     <div
@@ -58,11 +58,7 @@ export default function Sidebar({
         {isExpanded && (
           <div className="flex items-center gap-3 overflow-hidden">
             <div className="w-10 h-10 rounded-full border-2 border-blue-500 overflow-hidden bg-gray-700 flex items-center justify-center">
-              <img
-                src="/bida-logo.png"
-                alt="BIDA"
-                className="w-full h-full object-cover"
-              />
+              <img src="/bida-logo.png" alt="BIDA" className="w-full h-full object-cover" />
             </div>
             <div>
               <h1 className="font-marcellus text-2xl font-bold text-white leading-tight">
@@ -91,18 +87,14 @@ export default function Sidebar({
             <button
               key={item.id}
               onClick={() => {
-                onPageChange(item.id);
-
-                if (item.id === "map") {
-                  router.push("/dashboard/map");
+                if (item.isRoute) {
+                  router.push(item.path!); // ONLY Cesium
                 } else {
-                  router.push(`/dashboard/${item.id}`);
+                  onPageChange(item.id);   // OLD BEHAVIOR
                 }
               }}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
-                isActive
-                  ? "bg-gray-700 text-white"
-                  : "text-gray-300 hover:bg-gray-700 hover:text-white"
+                isActive ? "bg-gray-700 text-white" : "text-gray-300 hover:bg-gray-700 hover:text-white"
               }`}
             >
               <Icon size={20} />
@@ -112,13 +104,10 @@ export default function Sidebar({
         })}
       </nav>
 
-      {/* --- Bottom Section --- */}
+      {/* --- Bottom Section (Input Data + Logout) --- */}
       <div className="border-t border-gray-700 p-3 space-y-2">
         <button
-          onClick={() => {
-            onPageChange("input-data");
-            router.push("/dashboard/pages/input-data");
-          }}
+          onClick={() => onPageChange("input-data")}
           className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
             currentPage === "input-data"
               ? "bg-gray-700 text-white"
