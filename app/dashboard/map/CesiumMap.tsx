@@ -15,21 +15,21 @@ export default function CesiumMap() {
 
     (async () => {
       try {
-        // ✅ Load Cesium dynamically
+        // Dynamically import Cesium
         const Cesium = await import("cesium");
 
-        // ✅ Tell Cesium where required static files are found
+        // Tell Cesium where static files are located
         (window as any).CESIUM_BASE_URL = "/cesium";
 
         const { Ion, Viewer, Cartesian3, Color } = Cesium;
         const createWorldTerrain = (Cesium as any).createWorldTerrain;
 
-        // ✅ Load token
+        // Load Cesium Ion token
         Ion.defaultAccessToken = process.env.NEXT_PUBLIC_CESIUM_ION_TOKEN ?? "";
 
         if (!mounted) return;
 
-        // ✅ Create map viewer
+        // Initialize viewer
         viewerRef.current = new Viewer(mapRef.current, {
           terrainProvider: createWorldTerrain ? createWorldTerrain() : undefined,
           baseLayerPicker: true,
@@ -44,7 +44,7 @@ export default function CesiumMap() {
 
         const viewer = viewerRef.current;
 
-        // ✅ Fly camera to Tuboran
+        // Fly camera to Tuboran
         viewer.camera.flyTo({
           destination: Cartesian3.fromDegrees(
             tuboranCoords.lng,
@@ -53,13 +53,10 @@ export default function CesiumMap() {
           ),
         });
 
-        // ✅ Add Marker
+        // Add a marker
         viewer.entities.add({
           name: "Tuboran, Mawab, Davao de Oro",
-          position: Cartesian3.fromDegrees(
-            tuboranCoords.lng,
-            tuboranCoords.lat
-          ),
+          position: Cartesian3.fromDegrees(tuboranCoords.lng, tuboranCoords.lat),
           point: {
             pixelSize: 12,
             color: Color.RED,
@@ -70,11 +67,16 @@ export default function CesiumMap() {
             showBackground: true,
           },
         });
+
+        // Optional: enable lighting and shadows
+        viewer.scene.globe.enableLighting = true;
+        viewer.scene.globe.depthTestAgainstTerrain = true;
       } catch (err) {
         console.error("Failed to initialize Cesium:", err);
       }
     })();
 
+    // Cleanup on unmount
     return () => {
       mounted = false;
       if (viewerRef.current) {

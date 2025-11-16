@@ -4,10 +4,8 @@ import { useState } from "react"
 import Sidebar from "../../components/dashboard/sidebar"
 import HomePage from "../../components/dashboard/pages/home-page"
 import EconomicServicesPage from "../../components/dashboard/pages/economic-services-page"
-import InfrastructureServicesPage from "../../components/dashboard/pages/infrastructure-services-page"
 import SocialServicesPage from "../../components/dashboard/pages/social-services-page"
 import EnvironmentalServicesPage from "../../components/dashboard/pages/environmental-services-page"
-import GeneralServicesPage from "../../components/dashboard/pages/general-services-page"
 import InputDataPage from "../../components/dashboard/pages/input-data-page"
 
 export default function DashboardLayout() {
@@ -20,14 +18,10 @@ export default function DashboardLayout() {
         return <HomePage />
       case "economic":
         return <EconomicServicesPage />
-      case "infrastructure":
-        return <InfrastructureServicesPage />
       case "social":
         return <SocialServicesPage />
       case "environmental":
         return <EnvironmentalServicesPage />
-      case "general":
-        return <GeneralServicesPage />
       case "input-data":
         return <InputDataPage />
       default:

@@ -11,6 +11,9 @@ import {
   Database,
   LogOut,
   Menu,
+  FileText,
+  BarChart2,
+  Sliders,
   Map,
 } from "lucide-react";
 
@@ -31,11 +34,9 @@ export default function Sidebar({
 
   const menuItems = [
     { id: "home", label: "Home", icon: Home },
-    { id: "economic", label: "Economic Services", icon: Building2 },
-    { id: "infrastructure", label: "Infrastructure Services", icon: Hammer },
-    { id: "social", label: "Social Services", icon: Users },
-    { id: "environmental", label: "Environmental Services", icon: Leaf },
-    { id: "general", label: "General Services", icon: Settings },
+    { id: "economic", label: "Demographics Charts", icon: BarChart2 },
+    { id: "social", label: "Budget Records", icon: FileText },
+    { id: "environmental", label: "Recommendation engine", icon: Sliders },
 
     // ONLY CESIUM USES ROUTER
     { id: "map", label: "Barangay Map", icon: Map, isRoute: true, path: "/dashboard/map" },
