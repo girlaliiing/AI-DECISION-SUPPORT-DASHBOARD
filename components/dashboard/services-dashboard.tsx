@@ -15,6 +15,7 @@ import {
   Tooltip,
 } from "recharts"
 import { ChevronDown, X } from "lucide-react"
+import { BarChart2, Trash2, Edit2 } from 'lucide-react'
 
 
 interface ServicesDashboardProps {
@@ -1107,6 +1108,14 @@ export default function ServicesDashboard({ title }: ServicesDashboardProps) {
 
   return (
     <div className="w-full h-full bg-gray-900 p-8 overflow-auto">
+      {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-4">
+            <BarChart2 size={32} className="text-red-400" />
+            <h1 className="text-3xl font-bold text-white">Demographic Charts</h1>
+          </div>
+          <p className="text-gray-400">Monitor and interpret key demographic indicators across the barangay</p>
+        </div>
       {loading && (
         <div className="flex items-center justify-center text-gray-400 h-64">
           Loading charts...
