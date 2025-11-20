@@ -10,7 +10,7 @@ export async function GET() {
     const data = await collection.find({}).toArray();
 
     // ------------------------------
-    // Pie chart: totals by category
+    // CATEGORY SETUP
     // ------------------------------
     const categoryTotals: Record<string, number> = {
       "General Services": 0,
@@ -21,22 +21,20 @@ export async function GET() {
       "Other Services": 0,
     };
 
-    // ------------------------------
-    // PS / MOOE / CO chart
-    // ------------------------------
-    const categoryOrder = [
-      "General Services",
-      "Local Infrastructure Services / Social Services",
-      "Social Services",
-      "Economic Services",
-      "Environmental Management",
-      "Other Services",
-    ];
+    const categoryOrder = Object.keys(categoryTotals);
 
     const categoryData: Record<string, { PS: number; MOOE: number; CO: number }> = {};
-    categoryOrder.forEach((cat) => {
-      categoryData[cat] = { PS: 0, MOOE: 0, CO: 0 };
-    });
+    categoryOrder.forEach((c) => (categoryData[c] = { PS: 0, MOOE: 0, CO: 0 }));
+
+    // ----------------------------------------
+    // FIXED PARSER: Removes ₱ and commas
+    // ----------------------------------------
+    const parseMoney = (val: any): number => {
+      if (!val) return 0;
+      return (
+        parseFloat(val.toString().replace(/[₱,]/g, "")) || 0
+      );
+    };
 
     function mapCodeToCategory(code: string): string {
       const c = code.toLowerCase();
@@ -50,32 +48,39 @@ export async function GET() {
     }
 
     data.forEach((doc) => {
-      const category = mapCodeToCategory((doc["AIP Reference Code"] ?? "").toString());
+      const category = mapCodeToCategory(doc["AIP Reference Code"] ?? "");
 
-      // Parse numeric values safely
-      const parseValue = (val: any) =>
-        parseFloat((val ?? "0").toString().replace(/,/g, "")) || 0;
+      const ps = parseMoney(doc["Personal Services (PS)"]);
+      const mooe = parseMoney(doc["Maintenance and Other Operating Expenses (MOOE)"]);
+      const co = parseMoney(doc["Capital Outlay (CO)"]);
+      const total = parseMoney(doc["Total"]);
 
-      // Pie chart total
-      categoryTotals[category] += parseValue(doc["Total"]);
+      // PIE TOTAL
+      categoryTotals[category] += total;
 
-      // PS / MOOE / CO chart
-      categoryData[category].PS += parseValue(doc["Personal Services (PS)"]);
-      categoryData[category].MOOE += parseValue(doc["Maintenance and Other Operating Expenses (MOOE)"]);
-      categoryData[category].CO += parseValue(doc["Capital Outlay (CO)"]);
+      // PS / MOOE / CO
+      categoryData[category].PS += ps;
+      categoryData[category].MOOE += mooe;
+      categoryData[category].CO += co;
     });
 
-    const pieData = Object.keys(categoryTotals).map((key) => ({
-      name: key,
-      value: categoryTotals[key],
+    const pieData = categoryOrder.map((cat) => ({
+      name: cat,
+      value: categoryTotals[cat],
     }));
 
     const psMooeCoData = categoryOrder.map((cat) => ({
       category: cat,
-      ...categoryData[cat],
+      PS: categoryData[cat].PS,
+      MOOE: categoryData[cat].MOOE,
+      CO: categoryData[cat].CO,
     }));
 
-    return NextResponse.json({ pieData, psMooeCoData });
+    return NextResponse.json({
+      pieData,
+      psMooeCoData,
+      records: data,
+    });
   } catch (err) {
     console.error(err);
     return NextResponse.json(

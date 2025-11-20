@@ -1144,40 +1144,6 @@ export default function ServicesDashboard({ title }: ServicesDashboardProps) {
           />
         </ChartCard>
 
-        {/* Budget */}
-        <ChartCard id="budget" title="Budget Allocation and Recommendations" height="row-span-2 h-[539px]">
-          <div className="space-y-4 flex-1 overflow-hidden">
-            <div className="grid grid-cols-2 gap-6">
-              <div>
-                <p className="text-gray-400 text-sm mb-1">Lorem ipsum dolor sit amet</p>
-                <p className="text-green-400 text-sm font-semibold">10,431</p>
-              </div>
-              <div>
-                <p className="text-gray-400 text-sm mb-1">Lorem ipsum dolor sit amet</p>
-                <p className="text-green-400 text-sm font-semibold">6,745</p>
-              </div>
-            </div>
-            <div className="pt-4 border-t border-gray-700">
-              <p className="text-green-400 text-xs">Allocated budget: ₱45,000.00</p>
-              <p className="text-red-400 text-xs">Total budget: ₱3,345,000.00</p>
-              <p className="text-yellow-400 text-xs">Remaining: ₱3,300,000.00</p>
-            </div>
-            <div className="mt-4">
-              <h4 className="text-white font-semibold mb-2">Recommendations</h4>
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <p className="text-gray-400 text-sm">Lorem ipsum</p>
-                  <p className="text-yellow-400 font-semibold">345</p>
-                </div>
-                <div className="flex justify-between">
-                  <p className="text-gray-400 text-sm">Lorem ipsum</p>
-                  <p className="text-yellow-400 font-semibold">456</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </ChartCard>
-
         {/* Households pie */}
         <ChartCard id="households-purok" title="Households per Purok" height="h-72">
           <PieSection
@@ -1187,41 +1153,62 @@ export default function ServicesDashboard({ title }: ServicesDashboardProps) {
           />
         </ChartCard>
 
-        {/* Educational Attainment */}
-        <ChartCard id="education" title="Educational Attainment" height="h-72">
-          {activeModal === "education" ? (
-            <EducationalAttainmentBar compact={false} />
-          ) : (
-            <EducationalAttainmentBar compact={true} />
-          )}
-        </ChartCard>
+        <div className="grid grid-cols-[68%_30%] gap-6 items-start col-span-3 w-full">
 
-        {/* Families vs Households bar chart (full width row) */}
-        <ChartCard id="purok-compare" title="Families vs Households (per Purok) - comparison" height="col-span-3 h-72">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart
-              data={(() => {
-                const map: Record<string, any> = {}
-                familiesPerPurok.forEach((f) => {
-                  map[f.name] = { name: f.name, families: f.value, households: 0 }
-                })
-                householdsPerPurok.forEach((h) => {
-                  if (!map[h.name])
-                    map[h.name] = { name: h.name, families: 0, households: h.value }
-                  else map[h.name].households = h.value
-                })
-                return Object.values(map)
-              })()}
+          {/* Families vs Households */}
+          <div className="w-full">
+            <ChartCard
+              id="purok-compare"
+              title="Families vs Households (per Purok) - comparison"
+              height="h-72"
             >
-              <CartesianGrid strokeDasharray="3 3" stroke="#4b5563" />
-              <XAxis dataKey="name" stroke="#9ca3af" />
-              <YAxis stroke="#9ca3af" />
-              <Tooltip />
-              <Bar dataKey="families" fill="#3b82f6" />
-              <Bar dataKey="households" fill="#10b981" />
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartCard>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={(() => {
+                    const map: Record<string, any> = {};
+
+                    familiesPerPurok.forEach((f) => {
+                      map[f.name] = { name: f.name, families: f.value, households: 0 };
+                    });
+
+                    householdsPerPurok.forEach((h) => {
+                      if (!map[h.name]) {
+                        map[h.name] = { name: h.name, families: 0, households: h.value };
+                      } else {
+                        map[h.name].households = h.value;
+                      }
+                    });
+
+                    return Object.values(map);
+                  })()}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#4b5563" />
+                  <XAxis dataKey="name" stroke="#9ca3af" />
+                  <YAxis stroke="#9ca3af" />
+                  <Tooltip />
+                  <Bar dataKey="families" fill="#3b82f6" />
+                  <Bar dataKey="households" fill="#10b981" />
+                </BarChart>
+              </ResponsiveContainer>
+            </ChartCard>
+          </div>
+
+          {/*Educational Attainment  */}
+          <div className="w-full">
+            <ChartCard
+              id="education"
+              title="Educational Attainment"
+              height="h-72"
+            >
+              {activeModal === "education" ? (
+                <EducationalAttainmentBar compact={false} />
+              ) : (
+                <EducationalAttainmentBar compact={true} />
+              )}
+            </ChartCard>
+          </div>
+
+        </div>
 
         {/* Civil Status (30%) and Family Planning (70%) side by side like the Gender row */}
         <div className="grid grid-cols-[30%_68%] gap-6 items-start col-span-3">
