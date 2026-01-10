@@ -1,0 +1,38 @@
+{
+  "HEALTH_AND_NUTRITION": {
+    "title": "Community Health and Nutrition Services",
+    "category": "Social Services",
+    "priority": "High",
+    "description": "Provision of basic health services, nutrition monitoring, and maternal and child health programs at the barangay level."
+  },
+  "FAMILY_PLANNING": {
+    "title": "Family Planning and Reproductive Health Program",
+    "category": "Social Services",
+    "priority": "Medium",
+    "description": "Access to family planning information, counseling, and contraceptive services to promote responsible parenthood."
+  },
+  "SANITATION_UPGRADE": {
+    "title": "Household Sanitation Improvement Program",
+    "category": "Infrastructure Services",
+    "priority": "High",
+    "description": "Provision and upgrading of household toilets and sanitation facilities to reduce health risks."
+  },
+  "SOLID_WASTE_MANAGEMENT": {
+    "title": "Solid Waste Segregation and Management Program",
+    "category": "Environmental Services",
+    "priority": "High",
+    "description": "Barangay-wide waste segregation and Materials Recovery Facility strengthening."
+  },
+  "URBAN_GARDENING": {
+    "title": "Urban Gardening and Food Security Program",
+    "category": "Environmental Services",
+    "priority": "Medium",
+    "description": "Promotion of household and community gardens to improve food security."
+  },
+  "LIVELIHOOD_TRAINING": {
+    "title": "Livelihood Skills Training Program",
+    "category": "Economic Services",
+    "priority": "Medium",
+    "description": "Skills development and livelihood training to support household income generation."
+  }
+}
