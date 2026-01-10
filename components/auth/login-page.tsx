@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { Eye, EyeOff } from "lucide-react"
 
@@ -35,6 +34,33 @@ export default function LoginPage({ onSuccess, onToggle }: LoginPageProps) {
       const data = await res.json()
 
       if (data.success) {
+        // ================================
+        // ⭐ RECORD LOGIN INTO LOG FILE ⭐
+        // ================================
+        const now = new Date()
+
+        const formattedDate = now.toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "long",
+          day: "2-digit",
+        })
+
+        const formattedTime = now.toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+
+        await fetch("/api/login-records", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: username,
+            date: formattedDate,
+            time: formattedTime,
+          }),
+        })
+
+        // Continue login flow
         onSuccess()
       } else {
         alert(data.error || "Login failed")
@@ -52,10 +78,8 @@ export default function LoginPage({ onSuccess, onToggle }: LoginPageProps) {
         <div className="w-48 h-48 mb-8 mt-4 rounded-full border-4 border-blue-600 overflow-hidden bg-white flex items-center justify-center transform scale-125">
           <img src="/barangay-tuboran-seal.png" alt="BIDA Logo" className="w-full h-full object-cover" />
         </div>
-        <br></br>
-        <h1 className="font-marcellus text-6xl font-bold text-gray-900 mb-2">
-          BIDA
-        </h1>
+        <br />
+        <h1 className="font-marcellus text-6xl font-bold text-gray-900 mb-2">BIDA</h1>
 
         <p className="font-poppins text-xl text-gray-700 text-center">
           Barangay Intelligent
