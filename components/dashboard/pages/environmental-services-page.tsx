@@ -3,6 +3,17 @@
 import { useState, useEffect } from "react"
 import { Lightbulb, Trash2 } from "lucide-react"
 
+/* -------------------------------------------------------------------------- */
+/* TYPES                                                                      */
+/* -------------------------------------------------------------------------- */
+
+interface Budget {
+  ps: number | null
+  mooe: number | null
+  co: number | null
+  total: number | null
+}
+
 interface Recommendation {
   id: string
   title: string
@@ -12,7 +23,12 @@ interface Recommendation {
   timestamp: string
   size?: number
   avg_score?: number
+  budget?: Budget
 }
+
+/* -------------------------------------------------------------------------- */
+/* COMPONENT                                                                  */
+/* -------------------------------------------------------------------------- */
 
 export default function RecommendationEnginePage() {
   const [recommendations, setRecommendations] = useState<Recommendation[]>([])
@@ -20,63 +36,42 @@ export default function RecommendationEnginePage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   // ---------------------------------------------------------------------------
-  // LOAD PERSISTED RECOMMENDATIONS (BACKEND → FALLBACK LOCALSTORAGE)
-  // ---------------------------------------------------------------------------
-  useEffect(() => {
-    const load = async () => {
-      try {
-        // 🔥 FIRST: try backend (persistent)
-        const res = await fetch("/api/generate_recommendations")
-        if (res.ok) {
-          const data = await res.json()
-          if (Array.isArray(data) && data.length > 0) {
-            setRecommendations(data)
-            localStorage.setItem(
-              "cluster_recommendations",
-              JSON.stringify(data)
-            )
-            return
-          }
-        }
-
-        // 🔁 FALLBACK: localStorage
-        const saved = localStorage.getItem("cluster_recommendations")
-        if (saved) {
-          const parsed = JSON.parse(saved)
-
-          const uniqueIds = new Set(parsed.map((p: any) => p.id))
-          if (uniqueIds.size !== parsed.length) {
-            localStorage.removeItem("cluster_recommendations")
-            return
+    // LOAD PERSISTED RECOMMENDATIONS (BACKEND IS SOURCE OF TRUTH)
+    // ---------------------------------------------------------------------------
+    useEffect(() => {
+      const load = async () => {
+        try {
+          const res = await fetch("/api/generate_recommendations", { method: "POST" }) // <-- CHANGED
+          if (res.ok) {
+            const data = await res.json()
+            if (Array.isArray(data) && data.length > 0) {
+              setRecommendations(data)
+              return
+            }
           }
 
-          setRecommendations(parsed)
+          // Optional fallback ONLY (not persistence)
+          const saved = localStorage.getItem("cluster_recommendations")
+          if (saved) {
+            setRecommendations(JSON.parse(saved))
+          }
+        } catch {
+          // no-op: backend is authoritative
         }
-      } catch {
-        localStorage.removeItem("cluster_recommendations")
       }
-    }
 
-    load()
-  }, [])
-
-  const saveToStorage = (recs: Recommendation[]) => {
-    localStorage.setItem("cluster_recommendations", JSON.stringify(recs))
-  }
+      load()
+    }, [])
 
   // ---------------------------------------------------------------------------
-  // GENERATE RECOMMENDATIONS (EXPLICIT USER ACTION ONLY)
+  // GENERATE RECOMMENDATIONS
   // ---------------------------------------------------------------------------
   const generateRecommendations = async () => {
     setIsGenerating(true)
     setErrorMessage(null)
 
     try {
-      // 🔥 POST = regenerate & overwrite
-      const res = await fetch("/api/generate_recommendations", {
-        method: "POST",
-      })
-
+      const res = await fetch("/api/generate_recommendations", { method: "POST" })
       if (!res.ok) {
         const txt = await res.text().catch(() => "API error")
         throw new Error(txt || "API returned an error")
@@ -94,20 +89,17 @@ export default function RecommendationEnginePage() {
           timestamp: r.timestamp || new Date().toISOString(),
           size: r.size,
           avg_score: r.avg_score,
+          budget: r.budget ?? null,
         })
       )
 
-
-      // -------------------------------------------------------
-      // 🔥 DEDUPLICATE BASED ON CONTENT SIGNATURE
-      // -------------------------------------------------------
       const unique = [
         ...new Map(
           cleaned.map(item => [
             `${item.title}-${item.description}-${item.category}-${item.priority}`,
-            item
+            item,
           ])
-        ).values()
+        ).values(),
       ]
 
       if (unique.length === 0) {
@@ -115,7 +107,9 @@ export default function RecommendationEnginePage() {
       }
 
       setRecommendations(unique)
-      saveToStorage(unique)
+
+      // Optional cache only — NOT persistence
+      localStorage.setItem("cluster_recommendations", JSON.stringify(unique))
     } catch (error) {
       console.error("Error fetching recommendations:", error)
       setErrorMessage("Failed to fetch recommendations. Check backend.")
@@ -125,12 +119,12 @@ export default function RecommendationEnginePage() {
   }
 
   // ---------------------------------------------------------------------------
-  // DELETE A SINGLE RECOMMENDATION
+  // DELETE (UI ONLY — DOES NOT TOUCH BACKEND)
   // ---------------------------------------------------------------------------
   const deleteRecommendation = (id: string) => {
-    const updated = recommendations.filter((r) => r.id !== id)
+    const updated = recommendations.filter(r => r.id !== id)
     setRecommendations(updated)
-    saveToStorage(updated)
+    localStorage.setItem("cluster_recommendations", JSON.stringify(updated))
   }
 
   // ---------------------------------------------------------------------------
@@ -138,14 +132,10 @@ export default function RecommendationEnginePage() {
   // ---------------------------------------------------------------------------
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case "High":
-        return "bg-red-900 text-red-100"
-      case "Medium":
-        return "bg-yellow-900 text-yellow-100"
-      case "Low":
-        return "bg-green-900 text-green-100"
-      default:
-        return "bg-gray-700 text-gray-100"
+      case "High": return "bg-red-900 text-red-100"
+      case "Medium": return "bg-yellow-900 text-yellow-100"
+      case "Low": return "bg-green-900 text-green-100"
+      default: return "bg-gray-700 text-gray-100"
     }
   }
 
@@ -160,9 +150,10 @@ export default function RecommendationEnginePage() {
     return colors[category] || "bg-gray-700/30 text-gray-300"
   }
 
-  // ---------------------------------------------------------------------------
-  // RENDER
-  // ---------------------------------------------------------------------------
+  /* -------------------------------------------------------------------------- */
+  /* RENDER                                                                     */
+  /* -------------------------------------------------------------------------- */
+
   return (
     <div className="w-full h-full bg-gray-900 p-8 overflow-auto">
       <div className="max-w-7xl mx-auto">
@@ -171,7 +162,9 @@ export default function RecommendationEnginePage() {
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">
             <Lightbulb size={32} className="text-yellow-400" />
-            <h1 className="text-3xl font-bold text-white">Recommendation Engine</h1>
+            <h1 className="text-3xl font-bold text-white">
+              Recommendation Engine
+            </h1>
           </div>
           <p className="text-gray-400">Generate CLUP-aligned recommendations.</p>
         </div>
@@ -195,7 +188,6 @@ export default function RecommendationEnginePage() {
             <button
               onClick={() => {
                 setRecommendations([])
-                localStorage.removeItem("cluster_recommendations")
                 setErrorMessage(null)
               }}
               className="px-6 py-3 rounded-lg font-semibold bg-red-900 hover:bg-red-800 text-red-100 transition"
@@ -205,40 +197,68 @@ export default function RecommendationEnginePage() {
           )}
         </div>
 
-        {/* ERROR MESSAGE */}
+        {/* ERROR */}
         {errorMessage && (
-          <div className="mb-4 p-4 bg-red-800 text-red-100 rounded">{errorMessage}</div>
+          <div className="mb-4 p-4 bg-red-800 text-red-100 rounded">
+            {errorMessage}
+          </div>
         )}
 
-        {/* RECOMMENDATIONS LIST */}
+        {/* LIST */}
         {recommendations.length > 0 ? (
           <div className="space-y-4">
-            {recommendations.map((rec) => (
+            {recommendations.map(rec => (
               <div
                 key={rec.id}
                 className="bg-gray-800 border border-gray-700 rounded-lg p-6 hover:border-gray-600 transition"
               >
-                <div className="flex items-start justify-between mb-4">
-                  <div>
+                {/* HEADER GRID */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-4">
+                  <div className="md:col-span-2">
                     <div className="flex items-center gap-3 mb-2">
                       <h3 className="text-xl font-bold text-white">{rec.title}</h3>
-
-                      <span
-                        className={`px-3 py-1 rounded-full text-sm font-semibold ${getPriorityColor(
-                          rec.priority
-                        )}`}
-                      >
+                      <span className={`px-3 py-1 rounded-full text-sm font-semibold ${getPriorityColor(rec.priority)}`}>
                         {rec.priority} Priority
                       </span>
                     </div>
 
-                    <p className="text-gray-400 text-sm mb-3">{rec.timestamp}</p>
+                    <p className="text-gray-400 text-sm mb-2">{rec.timestamp}</p>
 
-                    <p className="text-gray-500 text-sm mb-1">
-                      <strong>Beneficiaries (est):</strong> {rec.size ?? "N/A"} &nbsp; • &nbsp;
-                      <strong>Score:</strong>{" "}
-                      {rec.avg_score !== undefined ? rec.avg_score.toFixed(2) : "N/A"}
+                    <p className="text-gray-500 text-sm">
+                      <strong>Beneficiaries:</strong> {rec.size ?? "N/A"} &nbsp; • &nbsp;
+                      <strong>Score:</strong> {rec.avg_score !== undefined ? rec.avg_score.toFixed(2) : "N/A"}
                     </p>
+                  </div>
+
+                  {/* BUDGET */}
+                  <div className="bg-gray-900 border border-gray-700 rounded-lg p-4">
+                    <p className="text-sm font-semibold text-gray-300 mb-2">Predicted Budget</p>
+                    <div className="text-sm text-gray-400 space-y-1">
+                      <div>
+                        <strong>PS:</strong>{" "}
+                        {rec.budget?.ps != null ? `₱${rec.budget.ps.toLocaleString()}` : "₱0.00"}
+                      </div>
+                      <div>
+                        <strong>MOOE:</strong>{" "}
+                        {rec.budget?.mooe != null ? `₱${rec.budget.mooe.toLocaleString()}` : "₱0.00"}
+                      </div>
+                      <div>
+                        <strong>CO:</strong>{" "}
+                        {rec.budget?.co != null ? `₱${rec.budget.co.toLocaleString()}` : "₱0.00"}
+                      </div>
+                      <div className="pt-1 border-t border-gray-700">
+                        <strong>Total:</strong>{" "}
+                        {rec.budget?.total != null ? `₱${rec.budget.total.toLocaleString()}` : "₱0.00"}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <pre className="text-gray-300 mb-4 whitespace-pre-wrap">{rec.description}</pre>
+
+                <div className="flex items-center justify-between">
+                  <div className={`inline-block px-3 py-1 rounded-lg text-sm font-semibold ${getCategoryColor(rec.category)}`}>
+                    {rec.category}
                   </div>
 
                   <button
@@ -248,18 +268,6 @@ export default function RecommendationEnginePage() {
                     <Trash2 size={20} />
                   </button>
                 </div>
-
-                <pre className="text-gray-300 mb-4 whitespace-pre-wrap">
-                  {rec.description}
-                </pre>
-
-                <div
-                  className={`inline-block px-3 py-1 rounded-lg text-sm font-semibold ${getCategoryColor(
-                    rec.category
-                  )}`}
-                >
-                  {rec.category}
-                </div>
               </div>
             ))}
           </div>
@@ -267,9 +275,7 @@ export default function RecommendationEnginePage() {
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <Lightbulb size={48} className="text-gray-600 mb-4" />
             <p className="text-gray-400 text-lg mb-2">No recommendations generated yet</p>
-            <p className="text-gray-500 text-sm">
-              Click "Generate Recommendations" to start
-            </p>
+            <p className="text-gray-500 text-sm">Click "Generate Recommendations" to start</p>
           </div>
         )}
       </div>

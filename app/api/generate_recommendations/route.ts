@@ -1,70 +1,81 @@
-// app/api/generate_recommendations/route.ts
 import { NextResponse } from "next/server"
 import clientPromise from "../../../lib/mongodb"
 
-const PYTHON_API = process.env.PYTHON_API || "http://localhost:5000/run-lstm"
+const BUDGET_API = "http://localhost:5001/predict-budget"
 
-export async function GET() {
-  try {
-    const client = await clientPromise
-    const db = client.db("hosehold_data")
-    const recCollection = db.collection("generated_recommendations")
+// ================================
+// TYPE DEFINITIONS
+// ================================
+interface RNNRecommendation {
+  title: string
+  description: string
+}
 
-    // ✅ RETURN SAVED RECOMMENDATIONS IF THEY EXIST
-    const saved = await recCollection.findOne({ type: "ACTIVE" })
-    if (saved && saved.recommendations?.length > 0) {
-      return NextResponse.json(saved.recommendations)
-    }
-
-    return NextResponse.json([])
-  } catch (err) {
-    console.error("Load error:", err)
-    return NextResponse.json([], { status: 500 })
-  }
+interface RNNRecommendationDoc {
+  _id: string
+  generated_at: string
+  total_households: number
+  recommendations: RNNRecommendation[]
 }
 
 export async function POST() {
   try {
     const client = await clientPromise
-    const db = client.db("hosehold_data")
 
-    const householdCollection = db.collection("household_data 2025")
-    const recCollection = db.collection("generated_recommendations")
+    // =========================================
+    // 1. LOAD LATEST RNN RECOMMENDATION
+    // =========================================
+    const aiDB = client.db("ai_decision_support")
+    const coll = aiDB.collection<RNNRecommendationDoc>("rnn_recommendations")
 
-    const households = await householdCollection.find({}).toArray()
+    const doc = await coll.findOne({ _id: "LATEST" })
 
-    // 🔥 CALL PYTHON
-    const response = await fetch(PYTHON_API, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ households }),
-    })
-
-    if (!response.ok) {
-      throw new Error("Python service failed")
+    if (!doc) {
+      return NextResponse.json(
+        { error: "No RNN recommendations found" },
+        { status: 404 }
+      )
     }
 
-    const recommendations = await response.json()
+    const services = doc.recommendations ?? []
 
-    // ✅ OVERWRITE OLD SET ONLY WHEN GENERATING
-    await recCollection.updateOne(
-      { type: "ACTIVE" },
-      {
-        $set: {
-          type: "ACTIVE",
-          recommendations,
-          generatedAt: new Date(),
+    // =========================================
+    // 2. CALL BUDGET API
+    // =========================================
+    const budgetRes = await fetch(BUDGET_API, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        year: new Date().getFullYear(), // backend will auto-detect latest budget year
+      }),
+    })
+
+    let budgets: any[] = []
+    if (budgetRes.ok) {
+      const data = await budgetRes.json()
+      budgets = data.budgets || []
+    }
+
+    // =========================================
+    // 3. MERGE RNN SERVICES + RF BUDGETS
+    // =========================================
+    const merged = services.map((service) => {
+      const match = budgets.find((b) => b.program === service.title)
+
+      return {
+        ...service,
+        budget: match || {
+          ps: null,
+          mooe: null,
+          co: null,
+          total: null,
         },
-      },
-      { upsert: true }
-    )
+      }
+    })
 
-    return NextResponse.json(recommendations)
-  } catch (error) {
-    console.error("Generate error:", error)
-    return NextResponse.json(
-      { error: "Failed to generate recommendations" },
-      { status: 500 }
-    )
+    return NextResponse.json(merged)
+  } catch (err) {
+    console.error("Generate error:", err)
+    return NextResponse.json({ error: "Failed" }, { status: 500 })
   }
 }
