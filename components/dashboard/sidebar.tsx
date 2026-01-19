@@ -36,7 +36,7 @@ export default function Sidebar({
     { id: "home", label: "Home", icon: Home },
     { id: "economic", label: "Demographics Charts", icon: BarChart2 },
     { id: "social", label: "Budget Records", icon: FileText },
-    { id: "environmental", label: "Recommendation engine", icon: Sliders },
+    { id: "environmental", label: "Recommendation Engine", icon: Sliders },
 
     // ONLY CESIUM USES ROUTER
     { id: "map", label: "Barangay Map", icon: Map, isRoute: true, path: "/dashboard/map" },

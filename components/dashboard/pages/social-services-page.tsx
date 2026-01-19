@@ -83,7 +83,7 @@ export default function BudgetRecordsPage() {
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">
             <DollarSign size={32} className="text-green-400" />
-            <h1 className="text-3xl font-bold text-white">Budget Allocation by Category</h1>
+            <h1 className="text-3xl font-bold text-white">Budget Records</h1>
           </div>
           <p className="text-gray-400">Track and manage barangay budget allocation and spending</p>
         </div>

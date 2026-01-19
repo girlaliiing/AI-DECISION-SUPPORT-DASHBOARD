@@ -131,7 +131,7 @@ export default function HomePage() {
           </ul>
         </div>
 
-        {/* Budget */}
+        {/* Budget 
         <div className="pt-6 border-t border-gray-700">
           <h3 className="text-gray-400 font-poppins uppercase text-sm mb-2">
             Total Budget
@@ -139,7 +139,7 @@ export default function HomePage() {
           <p className="text-2xl font-poppins font-bold text-white">
             PHP 3,450,387.00
           </p>
-        </div>
+        </div> */}
       </div>
     </div>
   )
