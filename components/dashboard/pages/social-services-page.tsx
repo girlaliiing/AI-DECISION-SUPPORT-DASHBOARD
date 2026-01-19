@@ -44,6 +44,7 @@ export default function BudgetRecordsPage() {
   useEffect(() => {
     async function fetchBudgetData() {
       try {
+        // ✅ Fetch data from updated backend route (rnn_recommendations source)
         const res = await fetch("/api/budget-records");
         const data = await res.json();
 
@@ -61,7 +62,6 @@ export default function BudgetRecordsPage() {
         const total = (data.records || []).reduce((sum: number, doc: any) => {
           return sum + parseMoney(doc["Total"]);
         }, 0);
-
         setGrandTotal(total);
       } catch (err) {
         console.error("Failed to fetch budget data:", err);
@@ -128,13 +128,8 @@ export default function BudgetRecordsPage() {
           </div>
 
           {/* Bar Chart */}
-          <div
-            className="bg-gray-800 border border-gray-700 rounded-lg p-6 flex-1"
-            style={{ flex: 0.7 }}
-          >
-            <h2 className="text-xl font-bold text-white mb-4">
-              PS / MOOE / CO by Category
-            </h2>
+          <div className="bg-gray-800 border border-gray-700 rounded-lg p-6 flex-1" style={{ flex: 0.7 }}>
+            <h2 className="text-xl font-bold text-white mb-4">PS / MOOE / CO by Category</h2>
             <ResponsiveContainer width="100%" height={400}>
               <BarChart data={psMooeCoData} margin={{ top: 20, right: 30, left: 0, bottom: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#444" />
@@ -144,20 +139,13 @@ export default function BudgetRecordsPage() {
                   interval={0}
                   tickFormatter={(value) => {
                     switch (value) {
-                      case "General Services":
-                        return "GS";
-                      case "Local Infrastructure Services / Social Services":
-                        return "LIS/SS";
-                      case "Social Services":
-                        return "SS";
-                      case "Economic Services":
-                        return "ES";
-                      case "Environmental Management":
-                        return "EM";
-                      case "Other Services":
-                        return "OS";
-                      default:
-                        return value;
+                      case "General Services": return "GS";
+                      case "Local Infrastructure Services / Social Services": return "LIS/SS";
+                      case "Social Services": return "SS";
+                      case "Economic Services": return "ES";
+                      case "Environmental Management": return "EM";
+                      case "Other Services": return "OS";
+                      default: return value;
                     }
                   }}
                 />
@@ -175,7 +163,6 @@ export default function BudgetRecordsPage() {
         {/* TABLE */}
         <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
           <h2 className="text-xl font-bold text-white mb-4">Budget Records Table</h2>
-
           <div className="overflow-auto">
             <table className="w-full border-collapse text-sm text-gray-300">
               <thead>
@@ -189,14 +176,12 @@ export default function BudgetRecordsPage() {
                   <th className="border border-gray-600 p-2">Total</th>
                 </tr>
               </thead>
-
               <tbody>
                 {records.map((row, i) => (
                   <tr key={i} className="hover:bg-gray-700">
                     <td className="border border-gray-700 p-2">{row["AIP Reference Code"]}</td>
                     <td className="border border-gray-700 p-2">{row["Program"]}</td>
                     <td className="border border-gray-700 p-2">{row["Funding Source"]}</td>
-
                     <td className="border border-gray-700 p-2">
                       ₱{parseMoney(row["Personal Services (PS)"]).toLocaleString()}
                     </td>
@@ -212,7 +197,6 @@ export default function BudgetRecordsPage() {
                   </tr>
                 ))}
               </tbody>
-
               <tfoot>
                 <tr className="bg-gray-700 font-bold text-white">
                   <td className="border border-gray-600 p-2 text-right" colSpan={6}>

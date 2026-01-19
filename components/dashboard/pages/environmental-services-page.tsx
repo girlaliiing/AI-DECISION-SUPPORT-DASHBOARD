@@ -35,25 +35,27 @@ export default function RecommendationEnginePage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   /* -------------------------------------------------------------------------- */
-  /* LOAD (BACKEND IS SOURCE OF TRUTH)                                          */
+  /* LOAD (LOCAL STORAGE IS SOURCE OF TRUTH)                                    */
   /* -------------------------------------------------------------------------- */
 
   useEffect(() => {
     const load = async () => {
+      // 1. Load from localStorage first
+      const saved = localStorage.getItem("cluster_recommendations")
+      if (saved) setRecommendations(JSON.parse(saved))
+
+      // 2. Then try to fetch new data (but do NOT override if empty)
       try {
         const res = await fetch("/api/generate_recommendations", { method: "POST" })
         if (res.ok) {
           const data = await res.json()
           if (Array.isArray(data) && data.length > 0) {
             setRecommendations(data)
-            return
+            localStorage.setItem("cluster_recommendations", JSON.stringify(data))
           }
         }
-
-        const saved = localStorage.getItem("cluster_recommendations")
-        if (saved) setRecommendations(JSON.parse(saved))
       } catch {
-        /* backend authoritative */
+        // ignore; localStorage remains authoritative
       }
     }
 
@@ -168,7 +170,10 @@ export default function RecommendationEnginePage() {
 
           {recommendations.length > 0 && (
             <button
-              onClick={() => setRecommendations([])}
+              onClick={() => {
+                setRecommendations([])
+                localStorage.removeItem("cluster_recommendations")
+              }}
               className="px-6 py-3 rounded-lg font-semibold bg-red-900 hover:bg-red-800 text-red-100 transition"
             >
               Clear All
