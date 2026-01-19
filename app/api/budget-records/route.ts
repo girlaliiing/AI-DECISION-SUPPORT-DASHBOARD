@@ -2,9 +2,6 @@
 import clientPromise from "../../../lib/mongodb";
 import { NextResponse } from "next/server";
 
-// ------------------------------
-// CATEGORY SETUP
-// ------------------------------
 const categoryOrder = [
   "General Services",
   "Local Infrastructure Services / Social Services",
@@ -14,9 +11,6 @@ const categoryOrder = [
   "Other Services",
 ];
 
-// ------------------------------
-// HELPER: MAP PROGRAM TITLE TO CATEGORY
-// ------------------------------
 function mapTitleToCategory(title: string): string {
   const t = title.toLowerCase();
   if (t.includes("general")) return "General Services";
@@ -28,13 +22,9 @@ function mapTitleToCategory(title: string): string {
   return "Other Services";
 }
 
-// ------------------------------
-// TYPE DEFINITIONS
-// ------------------------------
 interface Recommendation {
   title: string;
   category?: string;
-  description?: string;
   budget?: {
     ps: number | null;
     mooe: number | null;
@@ -44,38 +34,25 @@ interface Recommendation {
 }
 
 interface RNNRecommendationDoc {
-  _id: string; // ✅ string to fix TypeScript error
+  _id: string;
   generated_at: Date;
   total_households: number;
   recommendations: Recommendation[];
 }
 
-// ------------------------------
-// GET ENDPOINT
-// ------------------------------
+// -------------------
+// GET: Fetch latest recommendations + Total Budget
+// -------------------
 export async function GET() {
   try {
     const client = await clientPromise;
-    const db = client.db("ai_decision_support");
-    const coll = db.collection<RNNRecommendationDoc>("rnn_recommendations");
 
-    // ------------------------------
-    // 1️⃣ GET LATEST RNN RECOMMENDATIONS
-    // ------------------------------
+    const aiDB = client.db("ai_decision_support");
+    const coll = aiDB.collection<RNNRecommendationDoc>("rnn_recommendations");
+
     const doc = await coll.findOne({ _id: "LATEST" });
-    if (!doc || !doc.recommendations) {
-      return NextResponse.json({
-        pieData: [],
-        psMooeCoData: [],
-        records: [],
-      });
-    }
+    const recs = doc?.recommendations || [];
 
-    const recs = doc.recommendations;
-
-    // ------------------------------
-    // 2️⃣ INITIALIZE CATEGORY AGGREGATES
-    // ------------------------------
     const categoryTotals: Record<string, number> = {};
     const categoryData: Record<string, { PS: number; MOOE: number; CO: number }> = {};
     categoryOrder.forEach((c) => {
@@ -83,17 +60,11 @@ export async function GET() {
       categoryData[c] = { PS: 0, MOOE: 0, CO: 0 };
     });
 
-    // ------------------------------
-    // 3️⃣ HELPER TO PARSE NUMBERS
-    // ------------------------------
     const parseMoney = (val: any): number => {
       if (!val) return 0;
       return parseFloat(val.toString().replace(/[₱,]/g, "")) || 0;
     };
 
-    // ------------------------------
-    // 4️⃣ PROCESS RECOMMENDATIONS
-    // ------------------------------
     const tableRecords: any[] = recs.map((r) => {
       const category = mapTitleToCategory(r.category || r.title);
       const ps = parseMoney(r.budget?.ps);
@@ -101,7 +72,6 @@ export async function GET() {
       const co = parseMoney(r.budget?.co);
       const total = ps + mooe + co;
 
-      // AGGREGATE FOR CHARTS
       categoryTotals[category] += total;
       categoryData[category].PS += ps;
       categoryData[category].MOOE += mooe;
@@ -118,17 +88,11 @@ export async function GET() {
       };
     });
 
-    // ------------------------------
-    // 5️⃣ PIE CHART DATA
-    // ------------------------------
     const pieData = categoryOrder.map((cat) => ({
       name: cat,
       value: categoryTotals[cat],
     }));
 
-    // ------------------------------
-    // 6️⃣ PS / MOOE / CO BY CATEGORY
-    // ------------------------------
     const psMooeCoData = categoryOrder.map((cat) => ({
       category: cat,
       PS: categoryData[cat].PS,
@@ -136,19 +100,49 @@ export async function GET() {
       CO: categoryData[cat].CO,
     }));
 
-    // ------------------------------
-    // 7️⃣ RETURN
-    // ------------------------------
+    // ------------------- 
+    // GET Total Budget + Year from budget_records.total_budget
+    // -------------------
+    const budgetDB = client.db("budget_records");
+    const totalBudgetCol = budgetDB.collection("total_budget");
+    const totalBudgetDoc = await totalBudgetCol.findOne({}, { sort: { Year: -1 } });
+    const totalBudget = totalBudgetDoc ? parseMoney(totalBudgetDoc["Total Budget"]) : 0;
+    const budgetYear = totalBudgetDoc ? totalBudgetDoc.Year : new Date().getFullYear();
+
     return NextResponse.json({
       pieData,
       psMooeCoData,
       records: tableRecords,
+      totalBudget,
+      budgetYear,
     });
   } catch (err) {
     console.error("Failed to fetch RNN recommendation budget data:", err);
-    return NextResponse.json(
-      { error: "Failed to fetch budget chart data" },
-      { status: 500 }
+    return NextResponse.json({ error: "Failed to fetch budget chart data" }, { status: 500 });
+  }
+}
+
+// -------------------
+// POST: Update Total Budget + Year
+// -------------------
+export async function POST(req: Request) {
+  try {
+    const client = await clientPromise;
+    const { totalBudget, year } = await req.json();
+
+    const budgetDB = client.db("budget_records");
+    const totalBudgetCol = budgetDB.collection("total_budget");
+
+    // Upsert: Replace existing or insert new
+    await totalBudgetCol.updateOne(
+      { Year: year },
+      { $set: { "Total Budget": totalBudget, Year: year } },
+      { upsert: true }
     );
+
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error("Failed to update total budget:", err);
+    return NextResponse.json({ error: "Failed to update total budget" }, { status: 500 });
   }
 }

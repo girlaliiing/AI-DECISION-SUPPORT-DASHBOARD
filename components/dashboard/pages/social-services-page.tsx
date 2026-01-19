@@ -2,27 +2,20 @@
 
 import { useState, useEffect } from "react";
 import {
-  PieChart,
-  Pie,
-  Cell,
-  Tooltip,
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Legend,
-  CartesianGrid,
+  PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
+  BarChart, Bar, XAxis, YAxis, Legend, CartesianGrid
 } from "recharts";
-import { DollarSign } from "lucide-react";
+import { DollarSign, Save } from "lucide-react";
 
 export default function BudgetRecordsPage() {
   const [pieData, setPieData] = useState<{ name: string; value: number }[]>([]);
-  const [psMooeCoData, setPsMooeCoData] = useState<
-    { category: string; PS: number; MOOE: number; CO: number }[]
-  >([]);
+  const [psMooeCoData, setPsMooeCoData] = useState<{ category: string; PS: number; MOOE: number; CO: number }[]>([]);
   const [records, setRecords] = useState<any[]>([]);
   const [grandTotal, setGrandTotal] = useState<number>(0);
+
+  // Inputs for Total Budget and Year
+  const [totalBudget, setTotalBudget] = useState<number>(0);
+  const [budgetYear, setBudgetYear] = useState<number>(new Date().getFullYear());
 
   const categoryOrder = [
     "General Services",
@@ -35,40 +28,52 @@ export default function BudgetRecordsPage() {
 
   const colors = ["#3b82f6", "#8b5cf6", "#ec4899", "#f59e0b", "#10b981", "#06b6d4"];
 
-  // SAFE PARSER (same as backend)
   const parseMoney = (val: any) => {
     if (!val) return 0;
     return Number(val.toString().replace(/[₱,]/g, "")) || 0;
   };
 
+  // Fetch RNN recommendations + total budget from DB
   useEffect(() => {
     async function fetchBudgetData() {
       try {
         const res = await fetch("/api/budget-records");
         const data = await res.json();
 
-        // Pie Chart (ordered)
         const sortedPieData = categoryOrder.map((cat) => {
           const found = data.pieData.find((item: any) => item.name === cat);
           return found || { name: cat, value: 0 };
         });
         setPieData(sortedPieData);
-
         setPsMooeCoData(data.psMooeCoData || []);
         setRecords(data.records || []);
+        setGrandTotal((data.records || []).reduce((sum: number, doc: any) => sum + parseMoney(doc["Total"]), 0));
 
-        // Grand Total
-        const total = (data.records || []).reduce((sum: number, doc: any) => {
-          return sum + parseMoney(doc["Total"]);
-        }, 0);
-        setGrandTotal(total);
+        // Set inputs from DB
+        setTotalBudget(data.totalBudget || 0);
+        setBudgetYear(data.budgetYear || new Date().getFullYear());
       } catch (err) {
-        console.error("Failed to fetch budget data:", err);
+        console.error(err);
       }
     }
 
     fetchBudgetData();
   }, []);
+
+  // Save handler
+  const saveTotalBudget = async () => {
+    try {
+      await fetch("/api/budget-records", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ totalBudget, year: budgetYear }),
+      });
+      alert("Total Budget saved!");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to save Total Budget");
+    }
+  };
 
   return (
     <div className="w-full h-full bg-gray-900 p-8 overflow-auto">
@@ -85,17 +90,40 @@ export default function BudgetRecordsPage() {
 
         {/* SUMMARY CARDS */}
         <div className="grid grid-cols-3 gap-4 mb-8">
+          {/* Total Allocated */}
           <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
             <p className="text-gray-400 text-sm mb-2">Total Allocated</p>
             <p className="text-2xl font-bold text-green-400">₱{grandTotal.toLocaleString()}</p>
           </div>
-          <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
-            <p className="text-gray-400 text-sm mb-2">Total Spent</p>
-            <p className="text-2xl font-bold text-blue-400">₱—</p>
+
+          {/* Total Budget Input */}
+          <div className="bg-gray-800 border border-gray-700 rounded-lg p-6 flex flex-col gap-2">
+            <label className="text-gray-400 text-sm">Total Budget</label>
+            <input
+              type="number"
+              value={totalBudget}
+              onChange={(e) => setTotalBudget(parseFloat(e.target.value))}
+              className="p-2 rounded bg-gray-700 text-white"
+            />
           </div>
-          <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
-            <p className="text-gray-400 text-sm mb-2">Total Remaining</p>
-            <p className="text-2xl font-bold text-yellow-400">₱—</p>
+
+          {/* Budget Year Input + Save Button Inline */}
+          <div className="bg-gray-800 border border-gray-700 rounded-lg p-6 flex flex-col gap-2">
+            <label className="text-gray-400 text-sm">Year</label>
+            <div className="flex gap-2">
+              <input
+                type="number"
+                value={budgetYear}
+                onChange={(e) => setBudgetYear(parseInt(e.target.value))}
+                className="p-2 rounded bg-gray-700 text-white flex-1"
+              />
+              <button
+                onClick={saveTotalBudget}
+                className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-1 px-3 rounded flex items-center gap-1 text-sm"
+              >
+                <Save size={16} />
+              </button>
+            </div>
           </div>
         </div>
 
