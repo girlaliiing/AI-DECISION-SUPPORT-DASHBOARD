@@ -44,7 +44,6 @@ export default function BudgetRecordsPage() {
   useEffect(() => {
     async function fetchBudgetData() {
       try {
-        // ✅ Fetch data from updated backend route (rnn_recommendations source)
         const res = await fetch("/api/budget-records");
         const data = await res.json();
 
@@ -169,7 +168,6 @@ export default function BudgetRecordsPage() {
                 <tr className="bg-gray-700 text-white">
                   <th className="border border-gray-600 p-2">AIP Reference Code</th>
                   <th className="border border-gray-600 p-2">Program</th>
-                  <th className="border border-gray-600 p-2">Funding Source</th>
                   <th className="border border-gray-600 p-2">PS</th>
                   <th className="border border-gray-600 p-2">MOOE</th>
                   <th className="border border-gray-600 p-2">CO</th>
@@ -181,7 +179,6 @@ export default function BudgetRecordsPage() {
                   <tr key={i} className="hover:bg-gray-700">
                     <td className="border border-gray-700 p-2">{row["AIP Reference Code"]}</td>
                     <td className="border border-gray-700 p-2">{row["Program"]}</td>
-                    <td className="border border-gray-700 p-2">{row["Funding Source"]}</td>
                     <td className="border border-gray-700 p-2">
                       ₱{parseMoney(row["Personal Services (PS)"]).toLocaleString()}
                     </td>
@@ -199,7 +196,7 @@ export default function BudgetRecordsPage() {
               </tbody>
               <tfoot>
                 <tr className="bg-gray-700 font-bold text-white">
-                  <td className="border border-gray-600 p-2 text-right" colSpan={6}>
+                  <td className="border border-gray-600 p-2 text-right" colSpan={5}>
                     GRAND TOTAL:
                   </td>
                   <td className="border border-gray-600 p-2 text-green-400">
