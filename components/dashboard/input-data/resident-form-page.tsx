@@ -145,7 +145,7 @@ export default function ResidentFormPage({ onBack }: ResidentFormPageProps) {
         ← Back
       </button>
 
-      <div className="max-w-7xl">
+      <div className="max-w-7xl mx-auto">
         <div className="flex items-start justify-between mb-8">
           <div>
             <h2 className="text-3xl font-bold text-white mb-2">
