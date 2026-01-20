@@ -16,11 +16,32 @@ export default function BudgetRecordsPage({ onBack }: BudgetRecordsPageProps) {
     }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (file) {
-      console.log("Budget records file uploaded:", file.name)
+    if (!file) return
+
+    const formData = new FormData()
+    formData.append("file", file)
+
+    try {
+      const res = await fetch("/api/upload_budget_records", {
+        method: "POST",
+        body: formData,
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        console.error("Upload error:", data)
+        alert("Failed to upload file.")
+        return
+      }
+
+      alert(`Budget record imported successfully to ${data.collection}!`)
       onBack()
+    } catch (err) {
+      console.error("Error:", err)
+      alert("An error occurred while uploading.")
     }
   }
 
