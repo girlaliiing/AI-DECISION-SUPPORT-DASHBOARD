@@ -192,7 +192,7 @@ export default function UpdateDataFormPage() {
 
       <div className="border-b border-gray-600 mb-8" />
 
-      <div className="space-y-8 max-w-6xl">
+      <div className="space-y-8 max-w-6xl mx-auto">
         {members.map((member, index) => (
           <div key={member.id} className="space-y-6">
             {index > 0 && <div className="border-t border-gray-600 pt-8" />}
