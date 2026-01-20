@@ -189,7 +189,7 @@ export default function BudgetRecordsPage() {
 
         {/* TABLE */}
         <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
-          <h2 className="text-xl font-bold text-white mb-4">Budget Records Table</h2>
+          <h2 className="text-xl font-bold text-white mb-4">Programs Budget Records</h2>
           <div className="overflow-auto">
             <table className="w-full border-collapse text-sm text-gray-300">
               <thead>

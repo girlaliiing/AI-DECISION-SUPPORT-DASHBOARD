@@ -23,7 +23,7 @@ export default function InputDataPage() {
         return (
           <div className="w-full h-full bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
             <div className="text-center">
-              <h1 className="text-6xl font-marcellus font-light text-white mb-4">Welcome, Admin!</h1>
+              <h1 className="text-6xl font-marcellus font-bold text-white mb-4">Welcome, Admin!</h1>
               <p className="text-xl text-gray-400 mb-12">What would you like to do?</p>
 
               <div className="grid grid-cols-4 gap-8">

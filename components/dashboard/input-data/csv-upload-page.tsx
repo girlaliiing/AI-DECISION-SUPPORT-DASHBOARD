@@ -16,11 +16,32 @@ export default function CsvUploadPage({ onBack }: CsvUploadPageProps) {
     }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (file) {
-      console.log("CSV file uploaded:", file.name)
+    if (!file) return
+
+    const formData = new FormData()
+    formData.append("file", file)
+
+    try {
+      const res = await fetch("/api/upload-csv", {
+        method: "POST",
+        body: formData,
+      })
+
+      if (!res.ok) {
+        const error = await res.json()
+        console.error("Upload error:", error)
+        alert("Failed to upload CSV.")
+        return
+      }
+
+      console.log("CSV uploaded successfully:", file.name)
+      alert("CSV successfully uploaded and saved to DB!")
       onBack()
+    } catch (error) {
+      console.error("Upload failed:", error)
+      alert("Upload error. Please try again.")
     }
   }
 
