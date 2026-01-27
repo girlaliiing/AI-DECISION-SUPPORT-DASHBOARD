@@ -225,21 +225,21 @@ export default function InputDataPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <input
               type="text"
-              placeholder="Surname"
+              placeholder="Surname (Ex. Dela Cruz)"
               value={form.surname}
               onChange={(e) => handleInputChange(form.id, "surname", e.target.value)}
               className="px-4 py-3 bg-gray-600 text-white rounded-lg"
             />
             <input
               type="text"
-              placeholder="Given Name"
+              placeholder="Given Name (Ex. Juan)"
               value={form.givenName}
               onChange={(e) => handleInputChange(form.id, "givenName", e.target.value)}
               className="px-4 py-3 bg-gray-600 text-white rounded-lg"
             />
             <input
               type="text"
-              placeholder="Middle Name"
+              placeholder="Middle Name (Ex. Santos)"
               value={form.middleName}
               onChange={(e) => handleInputChange(form.id, "middleName", e.target.value)}
               className="px-4 py-3 bg-gray-600 text-white rounded-lg"
@@ -250,7 +250,7 @@ export default function InputDataPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <input
               type="text"
-              placeholder="Prefix"
+              placeholder="Prefix (Ex. Mx.)"
               value={form.prefix}
               onChange={(e) => handleInputChange(form.id, "prefix", e.target.value)}
               className="px-4 py-3 bg-gray-600 text-white rounded-lg"
@@ -258,7 +258,7 @@ export default function InputDataPage() {
 
             <input
               type="text"
-              placeholder="Suffix"
+              placeholder="Suffix (Ex. Jr.)"
               value={form.suffix}
               onChange={(e) => handleInputChange(form.id, "suffix", e.target.value)}
               className="px-4 py-3 bg-gray-600 text-white rounded-lg"
@@ -269,7 +269,7 @@ export default function InputDataPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <input
               type="text"
-              placeholder="Age"
+              placeholder="Age (Ex. 25)"
               value={form.age}
               onChange={(e) => handleInputChange(form.id, "age", e.target.value)}
               className="px-4 py-3 bg-gray-600 text-white rounded-lg"
@@ -290,7 +290,7 @@ export default function InputDataPage() {
               onChange={(e) => handleInputChange(form.id, "civilStatus", e.target.value)}
               className="px-4 py-3 bg-gray-600 text-white rounded-lg"
             >
-              <option value="">Civil Status</option>
+              <option value="">Civil Status (Ex. Married)</option>
               {[
                 "Married",
                 "Single",
@@ -318,7 +318,7 @@ export default function InputDataPage() {
 
             <input
               type="text"
-              placeholder="Birthplace"
+              placeholder="Birthplace (Ex. Tuboran)"
               value={form.birthplace}
               onChange={(e) => handleInputChange(form.id, "birthplace", e.target.value)}
               className="px-4 py-3 bg-gray-600 text-white rounded-lg"
@@ -328,7 +328,7 @@ export default function InputDataPage() {
           {/* Family Planning */}
           <input
             type="text"
-            placeholder="Family Planning"
+            placeholder="Family Planning (Ex. None)"
             value={form.familyPlanning}
             onChange={(e) => handleInputChange(form.id, "familyPlanning", e.target.value)}
             className="w-full px-4 py-3 bg-gray-600 text-white rounded-lg"
@@ -341,7 +341,7 @@ export default function InputDataPage() {
               onChange={(e) => handleInputChange(form.id, "educationalAttainment", e.target.value)}
               className="px-4 py-3 bg-gray-600 text-white rounded-lg"
             >
-              <option value="">Educational Attainment</option>
+              <option value="">Educational Attainment (Ex. College Graduate)</option>
               {[
                 "None",
                 "Elementary Level",
@@ -364,7 +364,7 @@ export default function InputDataPage() {
 
             <input
               type="text"
-              placeholder="Religion"
+              placeholder="Religion (Ex. Roman Catholic)"
               value={form.religion}
               onChange={(e) => handleInputChange(form.id, "religion", e.target.value)}
               className="px-4 py-3 bg-gray-600 text-white rounded-lg"
@@ -372,7 +372,7 @@ export default function InputDataPage() {
 
             <input
               type="text"
-              placeholder="Community Group"
+              placeholder="Community Group (Ex. Mandaya)"
               value={form.communityGroup}
               onChange={(e) => handleInputChange(form.id, "communityGroup", e.target.value)}
               className="px-4 py-3 bg-gray-600 text-white rounded-lg"
@@ -382,7 +382,7 @@ export default function InputDataPage() {
           {/* Occupation */}
           <input
             type="text"
-            placeholder="Occupation"
+            placeholder="Occupation (Ex. Farmer)"
             value={form.occupation}
             onChange={(e) => handleInputChange(form.id, "occupation", e.target.value)}
             className="w-full px-4 py-3 bg-gray-600 text-white rounded-lg"

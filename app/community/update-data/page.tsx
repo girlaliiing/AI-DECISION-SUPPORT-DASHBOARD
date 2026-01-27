@@ -56,29 +56,29 @@ export default function UpdateDataPage() {
             <X size={24} />
           </button>
 
-          <h2 className="text-2xl font-bold text-white mb-1">Enter purok number:</h2>
+          <h2 className="text-2xl font-bold text-white mb-1">Purok number:</h2>
 
           <input
             type="text"
-            placeholder="Purok Number"
+            placeholder="Purok Number (Ex. 1)"
             value={purokNumber}
             onChange={(e) => setPurokNumber(e.target.value)}
             className="w-full px-4 py-3 bg-gray-600 text-white rounded-lg placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
 
-          <h2 className="text-2xl font-bold text-white mb-4 mt-8">Enter full name (Head of the Family):</h2>
+          <h2 className="text-2xl font-bold text-white mb-4 mt-8">Full name (Head of the Family):</h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <input
               type="text"
-              placeholder="First Name"
+              placeholder="First Name (Ex. Juan)"
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
               className="px-4 py-3 bg-gray-600 text-white rounded-lg placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
             />
             <input
               type="text"
-              placeholder="Middle Name"
+              placeholder="Middle Name (Ex. Santos)"
               value={middleName}
               onChange={(e) => setMiddleName(e.target.value)}
               className="px-4 py-3 bg-gray-600 text-white rounded-lg placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
@@ -87,7 +87,7 @@ export default function UpdateDataPage() {
 
           <input
             type="text"
-            placeholder="Last Name"
+            placeholder="Last Name (Ex. Dela Cruz)"
             value={lastName}
             onChange={(e) => setLastName(e.target.value)}
             className="w-full px-4 py-3 bg-gray-600 text-white rounded-lg placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
@@ -95,7 +95,7 @@ export default function UpdateDataPage() {
 
           <input
             type="text"
-            placeholder="Suffix"
+            placeholder="Suffix (Ex. Jr.)"
             value={suffix}
             onChange={(e) => setSuffix(e.target.value)}
             className="w-full px-4 py-3 bg-gray-600 text-white rounded-lg placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
