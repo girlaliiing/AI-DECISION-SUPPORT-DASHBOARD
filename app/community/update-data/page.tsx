@@ -71,14 +71,14 @@ export default function UpdateDataPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <input
               type="text"
-              placeholder="First Name (Ex. Juan)"
+              placeholder="First Name (Ex. JUAN)"
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
               className="px-4 py-3 bg-gray-600 text-white rounded-lg placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
             />
             <input
               type="text"
-              placeholder="Middle Name (Ex. Santos)"
+              placeholder="Middle Name (Ex. SANTOS)"
               value={middleName}
               onChange={(e) => setMiddleName(e.target.value)}
               className="px-4 py-3 bg-gray-600 text-white rounded-lg placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
@@ -87,7 +87,7 @@ export default function UpdateDataPage() {
 
           <input
             type="text"
-            placeholder="Last Name (Ex. Dela Cruz)"
+            placeholder="Last Name (Ex. DELA CRUZ)"
             value={lastName}
             onChange={(e) => setLastName(e.target.value)}
             className="w-full px-4 py-3 bg-gray-600 text-white rounded-lg placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
@@ -95,7 +95,7 @@ export default function UpdateDataPage() {
 
           <input
             type="text"
-            placeholder="Suffix (Ex. Jr.)"
+            placeholder="Suffix (Ex. JR)"
             value={suffix}
             onChange={(e) => setSuffix(e.target.value)}
             className="w-full px-4 py-3 bg-gray-600 text-white rounded-lg placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"

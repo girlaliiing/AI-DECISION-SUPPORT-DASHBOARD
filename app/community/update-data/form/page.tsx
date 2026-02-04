@@ -219,7 +219,7 @@ export default function UpdateDataFormPage() {
             {/* NAMES */}
             <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
               <div>
-                <label className="text-xs text-gray-400">Surname (Ex. Dela Cruz)</label>
+                <label className="text-xs text-gray-400">Surname (Ex. DELA CRUZ)</label>
                 <input
                   type="text"
                   value={member.lastName}
@@ -230,7 +230,7 @@ export default function UpdateDataFormPage() {
                 />
               </div>
               <div>
-                <label className="text-xs text-gray-400">Given Name (Ex. Juan)</label>
+                <label className="text-xs text-gray-400">Given Name (Ex. JUAN)</label>
                 <input
                   type="text"
                   value={member.firstName}
@@ -241,7 +241,7 @@ export default function UpdateDataFormPage() {
                 />
               </div>
               <div>
-                <label className="text-xs text-gray-400">Middle Name (Ex. Santos)</label>
+                <label className="text-xs text-gray-400">Middle Name (Ex. SANTOS)</label>
                 <input
                   type="text"
                   value={member.middleName}
@@ -252,7 +252,7 @@ export default function UpdateDataFormPage() {
                 />
               </div>
               <div>
-                <label className="text-xs text-gray-400">Suffix (Ex. Jr.)</label>
+                <label className="text-xs text-gray-400">Suffix (Ex. JR.)</label>
                 <input
                   type="text"
                   value={member.suffix}
@@ -263,7 +263,7 @@ export default function UpdateDataFormPage() {
                 />
               </div>
               <div>
-                <label className="text-xs text-gray-400">Prefix (Ex. Mx.)</label>
+                <label className="text-xs text-gray-400">Prefix (Ex. MX.)</label>
                 <input
                   type="text"
                   value={member.prefix}
@@ -306,7 +306,7 @@ export default function UpdateDataFormPage() {
               </div>
 
               <div>
-                <label className="text-xs text-gray-400">Civil Status (Ex. Married)</label>
+                <label className="text-xs text-gray-400">Civil Status (Ex. MARRIED)</label>
                 <select
                   value={member.civilStatus}
                   onChange={(e) =>
@@ -337,7 +337,7 @@ export default function UpdateDataFormPage() {
                 </div>
 
                 <div>
-                  <label className="text-xs text-gray-400">Birthplace (Ex. Tuboran)</label>
+                  <label className="text-xs text-gray-400">Birthplace (Ex. TUBORAN)</label>
                   <input
                     type="text"
                     value={member.birthplace ?? ""}
@@ -352,7 +352,7 @@ export default function UpdateDataFormPage() {
             {/* FAMILY PLANNING • EDUCATION • OCCUPATION */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="text-xs text-gray-400">Family Planning (Ex. None)</label>
+                <label className="text-xs text-gray-400">Family Planning (Ex. NONE)</label>
                 <input
                   type="text"
                   value={member.familyPlanning}
@@ -369,7 +369,7 @@ export default function UpdateDataFormPage() {
 
               <div>
                 <label className="text-xs text-gray-400">
-                  Educational Attainment (Ex. College Graduate)
+                  Educational Attainment (Ex. COLLEGE GRADUATE)
                 </label>
                 <input
                   type="text"
@@ -386,7 +386,7 @@ export default function UpdateDataFormPage() {
               </div>
 
               <div>
-                <label className="text-xs text-gray-400">Occupation (Ex. Farmer)</label>
+                <label className="text-xs text-gray-400">Occupation (Ex. FARMER)</label>
                 <input
                   type="text"
                   value={member.occupation}
@@ -401,7 +401,7 @@ export default function UpdateDataFormPage() {
             {/* RELIGION • COMMUNITY */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="text-xs text-gray-400">Religion (Ex. Roman Catholic)</label>
+                <label className="text-xs text-gray-400">Religion (Ex. ROMAN CATHOLIC)</label>
                 <input
                   type="text"
                   value={member.religion}
@@ -414,7 +414,7 @@ export default function UpdateDataFormPage() {
 
               <div>
                 <label className="text-xs text-gray-400">
-                  Community Group (Ex. Bisaya)
+                  Community Group (Ex. BISAYA)
                 </label>
                 <input
                   type="text"
