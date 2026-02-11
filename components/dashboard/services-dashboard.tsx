@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo, useCallback, memo } from "react"
 import {
   PieChart,
   Pie,
@@ -66,7 +66,6 @@ export default function ServicesDashboard({ title }: ServicesDashboardProps) {
   const [activeModal, setActiveModal] = useState<string | null>(null)
   const [familiesPerPurok, setFamiliesPerPurok] = useState<{ name: string; value: number }[]>([])
   const [householdsPerPurok, setHouseholdsPerPurok] = useState<{ name: string; value: number }[]>([])
-  const [colorMap, setColorMap] = useState<Record<string, string>>({})
 
   // gender
   const [genderTotals, setGenderTotals] = useState<{ male: number; female: number }>({
@@ -79,7 +78,6 @@ export default function ServicesDashboard({ title }: ServicesDashboardProps) {
 
   // civil status
   const [civilStatusTotals, setCivilStatusTotals] = useState<{ name: string; value: number }[]>([])
-  const [civilColorMap, setCivilColorMap] = useState<Record<string, string>>({})
 
   // NEW STATE for Family Planning
   const [familyPlanningTotals, setFamilyPlanningTotals] = useState<{ name: string; value: number }[]>([])
@@ -103,115 +101,123 @@ export default function ServicesDashboard({ title }: ServicesDashboardProps) {
   const [toiletTotals, setToiletTotals] = useState<{ name: string; value: number }[]>([])
   const [mrfTotals, setMrfTotals] = useState<{ name: string; value: number }[]>([])
   const [gardenTotals, setGardenTotals] = useState<{ name: string; value: number }[]>([])
+  const colorMap = useMemo(() => {
+    const map: Record<string, string> = {}
+    const names = new Set<string>()
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await fetch("/api/household_data")
-        const json = await res.json()
+    familiesPerPurok.forEach(f => names.add(String(f.name)))
+    householdsPerPurok.forEach(h => names.add(String(h.name)))
 
-        const fam = json.familiesPerPurok || []
-        const house = json.householdsPerPurok || []
-        setFamiliesPerPurok(fam)
-        setHouseholdsPerPurok(house)
+    Array.from(names).sort().forEach((n, i) => {
+      map[n] = COLORS[i % COLORS.length]
+    })
 
-        // color map for pie charts
-        const namesSet = new Set<string>()
-        fam.forEach((f: any) => namesSet.add(String(f.name)))
-        house.forEach((h: any) => namesSet.add(String(h.name)))
-        const names = Array.from(namesSet).sort()
-        const map: Record<string, string> = {}
-        names.forEach((n, i) => (map[n] = COLORS[i % COLORS.length]))
-        setColorMap(map)
+    return map
+  }, [familiesPerPurok, householdsPerPurok])
 
-        // gender data
-        const gt = json.genderTotals || { male: 0, female: 0 }
-        setGenderTotals(gt)
-        const gp = (json.genderPerPurok || []).map((g: any) => ({
-          name: g.name,
-          male: g.male ?? 0,
-          female: g.female ?? 0,
-        }))
-        setGenderPerPurok(gp)
+  const civilColorMap = useMemo(() => {
+    const map: Record<string, string> = {}
 
-        // civil status totals
-        const cs = json.civilStatusTotals || []
-        setCivilStatusTotals(cs)
+    civilStatusTotals.forEach((c, i) => {
+      map[String(c.name)] = CIVIL_COLORS[i % CIVIL_COLORS.length]
+    })
 
-        // civil color map
-        const csNames = (cs || []).map((c: any) => String(c.name))
-        const cMap: Record<string, string> = {}
-        csNames.forEach((n: string, i: number) => {
-          cMap[n] = CIVIL_COLORS[i % CIVIL_COLORS.length]
-        })
-        setCivilColorMap(cMap)
+    return map
+  }, [civilStatusTotals])
 
-        // family planning
-        const fp = json.familyPlanningTotals || []
-        setFamilyPlanningTotals(fp)
+  const comparisonData = useMemo(() => {
+    const map: Record<string, any> = {}
 
-        // religion + community group robust parsing
-        const tryParseArray = (val: any) => {
-          if (!val) return []
-          if (Array.isArray(val)) return val
-          if (typeof val === "string") {
-            try {
-              const parsed = JSON.parse(val)
-              return Array.isArray(parsed) ? parsed : []
-            } catch {
-              return []
-            }
-          }
-          return []
-        }
+    familiesPerPurok.forEach(f => {
+      map[f.name] = { name: f.name, families: f.value, households: 0 }
+    })
 
-        const rel = tryParseArray(json.religionTotals || json.religion_totals)
-        const relPer = tryParseArray(json.religionPerPurok || json.religion_per_purok)
-        setReligionTotals(rel)
-        setReligionPerPurok(relPer)
-
-        const cg = tryParseArray(json.communityGroupTotals || json.community_group_totals)
-        const cgPer = tryParseArray(json.communityGroupPerPurok || json.community_group_per_purok)
-        setCommunityGroupTotals(cg)
-        setCommunityGroupPerPurok(cgPer)
-
-        // Educational Attainment (moved inside try block)
-        const edu = tryParseArray(
-          json.educationTotals || json.education_totals || json.education || []
-        )
-        setEducationTotals(edu)
-        
-        const occ = tryParseArray(json.occupationTotals || json.occupation_totals || [])
-        setOccupationTotals(occ)
-
-        const occPer = tryParseArray(json.occupationPerPurok || json.occupation_per_purok || [])
-        setOccupationPerPurok(occPer)
-
-                // new datasets (4p's, ip's, toilet, mrf, garden)
-        const fourPs = tryParseArray(json.fourPsTotals || json["4P'S"] || [])
-        const ip = tryParseArray(json.ipTotals || json["IP'S"] || [])
-        const toilet = tryParseArray(json.toiletTotals || json["TOILET"] || [])
-        const mrf = tryParseArray(json.mrfTotals || json["MRF SEGREGATED"] || [])
-        const garden = tryParseArray(json.gardenTotals || json["GARDEN"] || [])
-
-        setFourPsTotals(fourPs)
-        setIpTotals(ip)
-        setToiletTotals(toilet)
-        setMrfTotals(mrf)
-        setGardenTotals(garden)
-
-      } catch (err) {
-        console.error("Failed to fetch household_data:", err)
-        setEducationTotals([]) // optional fallback
+    householdsPerPurok.forEach(h => {
+      if (!map[h.name]) {
+        map[h.name] = { name: h.name, families: 0, households: h.value }
+      } else {
+        map[h.name].households = h.value
       }
-    }
+    })
 
-    fetchData()
+    return Object.values(map)
+  }, [familiesPerPurok, householdsPerPurok])
+
+  // Extract data application logic (kept identical)
+  const applyData = useCallback((json: any) => {
+    try {
+      setFamiliesPerPurok(json.familiesPerPurok || [])
+      setHouseholdsPerPurok(json.householdsPerPurok || [])
+
+      setGenderTotals(json.genderTotals || { male: 0, female: 0 })
+      setGenderPerPurok(json.genderPerPurok || [])
+
+      setCivilStatusTotals(json.civilStatusTotals || [])
+      setFamilyPlanningTotals(json.familyPlanningTotals || [])
+
+      const tryParseArray = (val: any) => {
+        if (!val) return []
+        if (Array.isArray(val)) return val
+        try { return JSON.parse(val) } catch { return [] }
+      }
+
+      setReligionTotals(tryParseArray(json.religionTotals))
+      setReligionPerPurok(tryParseArray(json.religionPerPurok))
+
+      setCommunityGroupTotals(tryParseArray(json.communityGroupTotals))
+      setCommunityGroupPerPurok(tryParseArray(json.communityGroupPerPurok))
+
+      setEducationTotals(tryParseArray(json.educationTotals))
+
+      setOccupationTotals(tryParseArray(json.occupationTotals))
+      setOccupationPerPurok(tryParseArray(json.occupationPerPurok))
+
+      setFourPsTotals(tryParseArray(json.fourPsTotals))
+      setIpTotals(tryParseArray(json.ipTotals))
+      setToiletTotals(tryParseArray(json.toiletTotals))
+      setMrfTotals(tryParseArray(json.mrfTotals))
+      setGardenTotals(tryParseArray(json.gardenTotals))
+
+    } catch (err) {
+      console.error("applyData failed:", err)
+    }
   }, [])
 
 
-  const openModal = (id: string) => setActiveModal(id)
-  const closeModal = () => setActiveModal(null)
+  useEffect(() => {
+    async function loadData() {
+      // Load cached data if available
+      const cached = localStorage.getItem("household-data");
+
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        applyData(parsed);
+      }
+
+      // Fetch fresh data
+      try {
+        const res = await fetch("/api/household_data");
+        const fresh = await res.json();
+
+        if (!res.ok) throw new Error("Failed to fetch");
+
+        const freshString = JSON.stringify(fresh);
+
+        if (freshString !== cached) {
+          localStorage.setItem("household-data", freshString);
+          applyData(fresh);
+        }
+      } catch (err) {
+        console.error("Failed to fetch household_data:", err);
+      }
+    }
+
+    loadData();
+  }, []);
+
+
+  const openModal = useCallback((id: string) => setActiveModal(id), [])
+  const closeModal = useCallback(() => setActiveModal(null), [])
 
   const ChartCard = ({
     id,
@@ -255,7 +261,7 @@ export default function ServicesDashboard({ title }: ServicesDashboardProps) {
   )
 
   // FIXED Family Planning Bar Chart (no wordBreak; truncation for compact mode)
-  const FamilyPlanningBar = ({ compact = false }: { compact?: boolean }) => {
+  const FamilyPlanningBar = memo(function FamilyPlanningBar({ compact = false }: { compact?: boolean }) {
     if (!familyPlanningTotals || familyPlanningTotals.length === 0) {
       return (
         <div className="text-gray-400 text-center pt-10">
@@ -313,158 +319,153 @@ export default function ServicesDashboard({ title }: ServicesDashboardProps) {
         </ResponsiveContainer>
       </div>
     )
-  }
+  })
 
   // Generic Expanded Chart (Pie + Bar) for Religion / Community Group
-    const DualChartSection = ({
-      title,
-      id,
-      pieData,
-      barData,
-    }: {
-      title: string
-      id: string
-      pieData: { name: string; value: number }[]
-      barData: any[]
-    }) => {
-      const expanded = activeModal === id
+  const DualChartSection = memo(function DualChartSection({
+    title,
+    id,
+    pieData,
+    barData,
+  }: {
+    title: string
+    id: string
+    pieData: { name: string; value: number }[]
+    barData: any[]
+  }) {
+    const expanded = useMemo(() => activeModal === id, [activeModal, id])
 
-      if (!expanded) {
-        return (
-          <PieSection
-            id={id}
-            data={pieData}
-            ariaLabel={`${title} pie chart`}
-            expandedLabelRenderer={renderExpandedLabelFamilies}
-          />
-        )
-      }
-
-      // Expanded view — show Pie (left) + Bar (right)
-      const keys =
-        Array.isArray(barData) && barData.length > 0
-          ? Object.keys(barData[0]).filter((k) => k !== "name")
-          : []
-
+    if (!expanded) {
       return (
-        <div className="flex flex-col items-center justify-center w-full h-full space-y-2">
-          <div className="flex w-full gap-4 items-center justify-center">
-            {/* PIE CHART (now a real pie, not a donut) */}
-            <div className="w-[40%] h-[260px] flex items-center justify-center">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={pieData}
-                    dataKey="value"
-                    nameKey="name"
-                    outerRadius={100} // ✅ only outerRadius (no innerRadius)
-                    labelLine={false}
-                    label={(props: any) => {
-                      const RADIAN = Math.PI / 180
-                      const cx = Number(props.cx) || 0
-                      const cy = Number(props.cy) || 0
-                      const midAngle = Number(props.midAngle) || 0
-                      const outerR = Number(props.outerRadius) || 85
+        <PieSection
+          id={id}
+          data={pieData}
+          ariaLabel={`${title} pie chart`}
+          expandedLabelRenderer={renderExpandedLabelFamilies}
+        />
+      )}
 
-                      // Label slightly inside the slice
-                      const radius = outerR * 0.65
-                      const x = cx + radius * Math.cos(-midAngle * RADIAN)
-                      const y = cy + radius * Math.sin(-midAngle * RADIAN)
+    const keys =
+      Array.isArray(barData) && barData.length > 0
+        ? Object.keys(barData[0]).filter((k) => k !== "name")
+        : []
 
-                      const value = props.value ?? ""
-                      const slicePct = props.percent ?? 0
-                      if (slicePct < 0.03) return null // hide tiny slice labels
+    return (
+      <div className="flex flex-col items-center justify-center w-full h-full space-y-2">
+        <div className="flex w-full gap-4 items-center justify-center">
+          <div className="w-[40%] h-[260px] flex items-center justify-center">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={pieData}
+                  dataKey="value"
+                  nameKey="name"
+                  outerRadius={100}
+                  labelLine={false}
+                  label={(props: any) => {
+                    const RADIAN = Math.PI / 180
+                    const cx = Number(props.cx) || 0
+                    const cy = Number(props.cy) || 0
+                    const midAngle = Number(props.midAngle) || 0
+                    const outerR = Number(props.outerRadius) || 85
 
-                      const fill = (props.fill || "#000").toString()
-                      let isLight = false
-                      try {
-                        const hex = fill.replace("#", "")
-                        const r = parseInt(hex.substring(0, 2), 16)
-                        const g = parseInt(hex.substring(2, 4), 16)
-                        const b = parseInt(hex.substring(4, 6), 16)
-                        const luminance =
-                          (0.299 * r + 0.587 * g + 0.114 * b) / 255
-                        isLight = luminance > 0.7
-                      } catch {
-                        isLight = false
-                      }
+                    const radius = outerR * 0.65
+                    const x = cx + radius * Math.cos(-midAngle * RADIAN)
+                    const y = cy + radius * Math.sin(-midAngle * RADIAN)
 
-                      return (
-                        <text
-                          x={x}
-                          y={y}
-                          fill={isLight ? "#000" : "#fff"}
-                          textAnchor="middle"
-                          dominantBaseline="central"
-                          fontSize={12}
-                          fontWeight={600}
-                        >
-                          {value}
-                        </text>
-                      )
-                    }}
-                  >
-                    {pieData.map((entry, i) => (
-                      <Cell
-                        key={entry.name}
-                        fill={COLORS_EXTENDED[i % COLORS_EXTENDED.length]}
-                      />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
+                    const value = props.value ?? ""
+                    const slicePct = props.percent ?? 0
+                    if (slicePct < 0.03) return null
 
-            {/* BAR CHART */}
-            <div className="w-[60%] h-[400px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={barData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#4b5563" />
-                  <XAxis
-                    dataKey="name"
-                    stroke="#9ca3af"
-                    angle={-20}
-                    textAnchor="end"
-                    height={50}
-                    tick={{ fontSize: 10 }}
-                  />
-                  <YAxis stroke="#9ca3af" tick={{ fontSize: 10 }} />
-                  <Tooltip />
-                  {keys.map((k, i) => (
-                    <Bar
-                      key={k}
-                      dataKey={k}
+                    const fill = (props.fill || "#000").toString()
+                    let isLight = false
+
+                    try {
+                      const hex = fill.replace("#", "")
+                      const r = parseInt(hex.substring(0, 2), 16)
+                      const g = parseInt(hex.substring(2, 4), 16)
+                      const b = parseInt(hex.substring(4, 6), 16)
+                      const luminance =
+                        (0.299 * r + 0.587 * g + 0.114 * b) / 255
+                      isLight = luminance > 0.7
+                    } catch {
+                      isLight = false}
+
+                    return (
+                      <text
+                        x={x}
+                        y={y}
+                        fill={isLight ? "#000" : "#fff"}
+                        textAnchor="middle"
+                        dominantBaseline="central"
+                        fontSize={12}
+                        fontWeight={600}
+                      >
+                        {value}
+                      </text>
+                    )
+                  }}
+                >
+                  {pieData.map((entry, i) => (
+                    <Cell
+                      key={entry.name}
                       fill={COLORS_EXTENDED[i % COLORS_EXTENDED.length]}
-                      stackId="a"
                     />
                   ))}
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
           </div>
 
-          {/* COMBINED LEGEND BELOW */}
-          <div className="flex flex-wrap justify-center gap-2 text-xs mt-2">
-            {pieData.map((entry, i) => (
-              <div key={`legend-${i}`} className="flex items-center gap-1">
-                <div
-                  className="w-3 h-3 rounded-sm"
-                  style={{
-                    backgroundColor:
-                      COLORS_EXTENDED[i % COLORS_EXTENDED.length],
-                  }}
-                ></div>
-                <span className="text-gray-300">{entry.name}</span>
-              </div>
-            ))}
+          <div className="w-[60%] h-[400px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={barData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#4b5563" />
+                <XAxis
+                  dataKey="name"
+                  stroke="#9ca3af"
+                  angle={-20}
+                  textAnchor="end"
+                  height={50}
+                  tick={{ fontSize: 10 }}
+                />
+                <YAxis stroke="#9ca3af" tick={{ fontSize: 10 }} />
+                <Tooltip />
+                {keys.map((k, i) => (
+                  <Bar
+                    key={k}
+                    dataKey={k}
+                    fill={COLORS_EXTENDED[i % COLORS_EXTENDED.length]}
+                    stackId="a"
+                  />
+                ))}
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </div>
-      )
-    }
+
+        <div className="flex flex-wrap justify-center gap-2 text-xs mt-2">
+          {pieData.map((entry, i) => (
+            <div key={`legend-${i}`} className="flex items-center gap-1">
+              <div
+                className="w-3 h-3 rounded-sm"
+                style={{
+                  backgroundColor:
+                    COLORS_EXTENDED[i % COLORS_EXTENDED.length],
+                }}
+              ></div>
+              <span className="text-gray-300">{entry.name}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  })
+
 
     // Educational Attainment Horizontal Bar Graph
-    const EducationalAttainmentBar = ({ compact = false }: { compact?: boolean }) => {
+    const EducationalAttainmentBar = memo(function EducationalAttainmentBar({ compact = false }: { compact?: boolean }) {
       if (!educationTotals || educationTotals.length === 0) {
         return (
           <div className="text-gray-400 text-center pt-10">
@@ -521,10 +522,10 @@ export default function ServicesDashboard({ title }: ServicesDashboardProps) {
           </ResponsiveContainer>
         </div>
       )
-    }
+    })
 
     // Occupation Horizontal BarChart
-    const OccupationBar = ({ compact = false }: { compact?: boolean }) => {
+    const OccupationBar = memo(function OccupationBar({ compact = false }: { compact?: boolean }) {
       if (!occupationPerPurok || occupationPerPurok.length === 0) {
         return (
           <div className="text-gray-400 text-center pt-10">
@@ -694,25 +695,26 @@ export default function ServicesDashboard({ title }: ServicesDashboardProps) {
           )}
         </div>
       )
-    }
+    })
 
     // === Five Donut Charts (4Ps, IPs, Toilet, MRF, Garden) ===
-    const FiveDonutSection = ({
+    const FiveDonutSection = memo(function FiveDonutSection({
       id,
       datasets,
     }: {
       id: string
       datasets: { name: string; data: { name: string; value: number }[] }[]
-    }) => {
-      const expanded = activeModal === id
+    }) {
+      const expanded = useMemo(() => activeModal === id, [activeModal, id])
 
       if (!expanded) {
-        // Minimized view: 1 row of 5 small donuts (already has titles)
         return (
           <div className="grid grid-cols-5 gap-4 w-full h-full">
             {datasets.map((set) => (
               <div key={set.name} className="flex flex-col items-center justify-center">
-                <div className="text-sm font-medium mb-1 text-gray-300">{set.name}</div>
+                <div className="text-sm font-medium mb-1 text-gray-300">
+                  {set.name}
+                </div>
                 <ResponsiveContainer width="100%" height={130}>
                   <PieChart>
                     <Pie
@@ -736,8 +738,7 @@ export default function ServicesDashboard({ title }: ServicesDashboardProps) {
               </div>
             ))}
           </div>
-        )
-      }
+        )}
 
       // Expanded view
       return (
@@ -819,15 +820,8 @@ export default function ServicesDashboard({ title }: ServicesDashboardProps) {
           </div>
         </div>
       )
-    }
-    
+    })
 
-  const loading =
-    familiesPerPurok.length === 0 &&
-    householdsPerPurok.length === 0 &&
-    genderTotals.male === 0 &&
-    genderTotals.female === 0 &&
-    civilStatusTotals.length === 0
 
   // pie label renderers
   const renderMinimizedLabel = (props: any) => {
@@ -1116,11 +1110,6 @@ export default function ServicesDashboard({ title }: ServicesDashboardProps) {
           </div>
           <p className="text-gray-400">Monitor and interpret key demographic indicators across the barangay</p>
         </div>
-      {loading && (
-        <div className="flex items-center justify-center text-gray-400 h-64">
-          Loading charts...
-        </div>
-      )}
 
       <div className="grid grid-cols-3 gap-6 items-start">
         {/* Gender card */}
@@ -1163,25 +1152,7 @@ export default function ServicesDashboard({ title }: ServicesDashboardProps) {
               height="h-72"
             >
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={(() => {
-                    const map: Record<string, any> = {};
-
-                    familiesPerPurok.forEach((f) => {
-                      map[f.name] = { name: f.name, families: f.value, households: 0 };
-                    });
-
-                    householdsPerPurok.forEach((h) => {
-                      if (!map[h.name]) {
-                        map[h.name] = { name: h.name, families: 0, households: h.value };
-                      } else {
-                        map[h.name].households = h.value;
-                      }
-                    });
-
-                    return Object.values(map);
-                  })()}
-                >
+                <BarChart data={comparisonData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#4b5563" />
                   <XAxis dataKey="name" stroke="#9ca3af" />
                   <YAxis stroke="#9ca3af" />

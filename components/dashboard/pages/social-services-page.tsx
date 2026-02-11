@@ -98,7 +98,7 @@ export default function BudgetRecordsPage() {
 
           {/* Total Budget Input */}
           <div className="bg-gray-800 border border-gray-700 rounded-lg p-6 flex flex-col gap-2">
-            <label className="text-gray-400 text-sm">Total Budget</label>
+            <label className="text-gray-400 text-sm">Total Budget (Ex.5035493.03 )</label>
             <input
               type="number"
               value={totalBudget}
@@ -109,7 +109,7 @@ export default function BudgetRecordsPage() {
 
           {/* Budget Year Input + Save Button Inline */}
           <div className="bg-gray-800 border border-gray-700 rounded-lg p-6 flex flex-col gap-2">
-            <label className="text-gray-400 text-sm">Year</label>
+            <label className="text-gray-400 text-sm">Year (Ex. 2026)</label>
             <div className="flex gap-2">
               <input
                 type="number"
@@ -194,12 +194,12 @@ export default function BudgetRecordsPage() {
             <table className="w-full border-collapse text-sm text-gray-300">
               <thead>
                 <tr className="bg-gray-700 text-white">
-                  <th className="border border-gray-600 p-2">AIP Reference Code</th>
-                  <th className="border border-gray-600 p-2">Program</th>
-                  <th className="border border-gray-600 p-2">PS</th>
-                  <th className="border border-gray-600 p-2">MOOE</th>
-                  <th className="border border-gray-600 p-2">CO</th>
-                  <th className="border border-gray-600 p-2">Total</th>
+                  <th className="border border-gray-600 p-2 text-base">AIP Reference Code</th>
+                  <th className="border border-gray-600 p-2 text-base">Program</th>
+                  <th className="border border-gray-600 p-2 text-base">PS</th>
+                  <th className="border border-gray-600 p-2 text-base">MOOE</th>
+                  <th className="border border-gray-600 p-2 text-base">CO</th>
+                  <th className="border border-gray-600 p-2 text-base">Total</th>
                 </tr>
               </thead>
               <tbody>
@@ -224,10 +224,10 @@ export default function BudgetRecordsPage() {
               </tbody>
               <tfoot>
                 <tr className="bg-gray-700 font-bold text-white">
-                  <td className="border border-gray-600 p-2 text-right" colSpan={5}>
+                  <td className="border border-gray-600 p-2 text-right text-xl" colSpan={5}>
                     GRAND TOTAL:
                   </td>
-                  <td className="border border-gray-600 p-2 text-green-400">
+                  <td className="border border-gray-600 p-2 text-green-400 text-xl">
                     ₱{grandTotal.toLocaleString()}
                   </td>
                 </tr>

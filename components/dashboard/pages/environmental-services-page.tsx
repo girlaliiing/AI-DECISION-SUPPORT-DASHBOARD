@@ -40,11 +40,9 @@ export default function RecommendationEnginePage() {
 
   useEffect(() => {
     const load = async () => {
-      // 1. Load from localStorage first
       const saved = localStorage.getItem("cluster_recommendations")
       if (saved) setRecommendations(JSON.parse(saved))
 
-      // 2. Then try to fetch new data (but do NOT override if empty)
       try {
         const res = await fetch("/api/generate_recommendations", { method: "POST" })
         if (res.ok) {
@@ -54,9 +52,7 @@ export default function RecommendationEnginePage() {
             localStorage.setItem("cluster_recommendations", JSON.stringify(data))
           }
         }
-      } catch {
-        // ignore; localStorage remains authoritative
-      }
+      } catch {}
     }
 
     load()
@@ -76,18 +72,16 @@ export default function RecommendationEnginePage() {
 
       const data = await res.json()
 
-      const cleaned: Recommendation[] = (Array.isArray(data) ? data : []).map(
-        (r: any) => ({
-          id: r.id || crypto.randomUUID(),
-          title: r.title || "Untitled Recommendation",
-          description: r.description || "",
-          category: r.category || "General Services",
-          priority: r.priority || "Medium",
-          size: r.size,
-          avg_score: r.avg_score,
-          budget: r.budget ?? null,
-        })
-      )
+      const cleaned: Recommendation[] = (Array.isArray(data) ? data : []).map((r: any) => ({
+        id: r.id || crypto.randomUUID(),
+        title: r.title || "Untitled Recommendation",
+        description: r.description || "",
+        category: r.category || "General Services",
+        priority: r.priority || "Medium",
+        size: r.size,
+        avg_score: r.avg_score,
+        budget: r.budget ?? null,
+      }))
 
       setRecommendations(cleaned)
       localStorage.setItem("cluster_recommendations", JSON.stringify(cleaned))
@@ -144,16 +138,12 @@ export default function RecommendationEnginePage() {
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">
             <Lightbulb size={32} className="text-yellow-400" />
-            <h1 className="text-3xl font-bold text-white">
-              Recommendation Engine
-            </h1>
+            <h1 className="text-3xl font-bold text-white">Recommendation Engine</h1>
           </div>
-          <p className="text-gray-400 text-base">
-            Generate CLUP-aligned recommendations.
-          </p>
+          <p className="text-gray-400">Generate CLUP-aligned recommendations</p>
         </div>
 
-        {/* CONTROLS */}
+        {/* BUTTONS */}
         <div className="flex gap-4 mb-8">
           <button
             onClick={generateRecommendations}
@@ -183,114 +173,123 @@ export default function RecommendationEnginePage() {
 
         {/* ERROR */}
         {errorMessage && (
-          <div className="mb-4 p-4 bg-red-800 text-red-100 rounded">
-            {errorMessage}
-          </div>
+          <div className="mb-4 p-4 bg-red-800 text-red-100 rounded">{errorMessage}</div>
         )}
 
         {/* LIST */}
         {recommendations.length > 0 ? (
           <div className="grid grid-cols-1 gap-6">
-            {recommendations.map(rec => (
-              <div
-                key={rec.id}
-                className="bg-slate-800 border border-slate-700 rounded-lg p-8 hover:border-slate-600 transition shadow-lg"
-              >
-                {/* TITLE + ACTIONS */}
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-3 flex-wrap">
-                    <h3 className="text-xl font-bold text-white">
-                      {rec.title}
-                    </h3>
-                    <span
-                      className={`px-3 py-1 rounded-lg text-sm font-semibold whitespace-nowrap ${getPriorityColor(rec.priority)}`}
+            {recommendations.map(rec => {
+              const totalBudget = (rec.budget?.ps ?? 0) + (rec.budget?.mooe ?? 0) + (rec.budget?.co ?? 0)
+
+              return (
+                <div
+                  key={rec.id}
+                  className="bg-slate-800 border border-slate-700 rounded-lg p-8 hover:border-slate-600 transition shadow-lg"
+                >
+
+                  {/* TITLE + DELETE + PRIORITY */}
+                  <div className="flex items-center justify-between mb-6 pb-6 border-b border-slate-700">
+                    <div className="flex items-center gap-3">
+                      <h3 className="text-2xl font-bold text-white">{rec.title}</h3>
+
+                      <span
+                        className={`px-3 py-1 rounded-lg text-base font-semibold whitespace-nowrap ${getPriorityColor(rec.priority)}`}
+                      >
+                        {rec.priority} Priority
+                      </span>
+                    </div>
+
+                    <button
+                      onClick={() => deleteRecommendation(rec.id)}
+                      className="p-2 hover:bg-red-900/30 rounded-lg text-red-400 hover:text-red-300 transition"
                     >
-                      {rec.priority} Priority
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+
+                  {/* META LINE */}
+                  <div className="flex items-center gap-6 text-sm text-gray-400 mb-6 pb-6 border-b border-slate-700">
+                    <span>
+                      Beneficiaries:{" "}
+                      <span className="text-white font-semibold">
+                        {rec.size?.toLocaleString() ?? "N/A"}
+                      </span>
+                    </span>
+                    <span>
+                      Score:{" "}
+                      <span className="text-white font-semibold">
+                        {rec.avg_score !== undefined ? rec.avg_score.toFixed(2) : "N/A"}
+                      </span>
                     </span>
                   </div>
 
-                  <button
-                    onClick={() => deleteRecommendation(rec.id)}
-                    className="p-2 hover:bg-red-900/30 rounded-lg text-red-400 hover:text-red-300 transition"
-                    title="Delete recommendation"
-                  >
-                    <Trash2 size={18} />
-                  </button>
-                </div>
+                  {/* MAIN ROW: DESC + BUDGET */}
+                  <div className="flex gap-6 items-stretch">
 
-                {/* META */}
-                <div className="flex items-center gap-6 text-sm text-gray-400 mb-6 pb-6 border-b border-slate-700">
-                  <span>
-                    Beneficiaries:{" "}
-                    <span className="text-white font-semibold">
-                      {rec.size ?? "N/A"}
-                    </span>
-                  </span>
-                  <span>
-                    Score:{" "}
-                    <span className="text-white font-semibold">
-                      {rec.avg_score !== undefined
-                        ? rec.avg_score.toFixed(2)
-                        : "N/A"}
-                    </span>
-                  </span>
-                </div>
+                    {/* LEFT: DESCRIPTION */}
+                    <div className="flex-1 flex flex-col justify-between">
+                      <p className="text-gray-300 text-base leading-relaxed">{rec.description}</p>
 
-                {/* DESCRIPTION */}
-                <p className="text-gray-300 text-base leading-relaxed mb-8">
-                  {rec.description}
-                </p>
-
-                {/* FOOTER */}
-                <div className="flex items-end justify-between">
-                  <div
-                    className={`inline-block px-3 py-1 rounded-lg text-sm font-semibold ${getCategoryColor(rec.category)}`}
-                  >
-                    {rec.category}
-                  </div>
-
-                  <div className="flex gap-8 text-right">
-                    <div>
-                      <p className="text-xs text-gray-500 font-semibold mb-1">Personal Services</p>
-                      <p className="text-white-300 font-bold">
-                        ₱{rec.budget?.ps?.toLocaleString() ?? "0"}
-                      </p>
+                      <div
+                        className={`inline-block px-3 py-1 rounded-lg text-base font-semibold w-fit mt-4 ${getCategoryColor(rec.category)}`}
+                      >
+                        {rec.category}
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-xs text-gray-500 font-semibold mb-1">MOOE</p>
-                      <p className="text-white-300 font-bold">
-                        ₱{rec.budget?.mooe?.toLocaleString() ?? "0"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500 font-semibold mb-1">Capital Outlay</p>
-                      <p className="text-white-300 font-bold">
-                        ₱{rec.budget?.co?.toLocaleString() ?? "0"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-300 font-bold mb-1">
-                        Total
-                      </p>
-                      <p className="text-amber-400 font-bold text-lg">
-                        ₱{rec.budget?.total?.toLocaleString() ?? "0"}
-                      </p>
+
+                    {/* RIGHT: BUDGET PANEL */}
+                    <div className="flex flex-col gap-3 bg-slate-700/30 p-4 rounded-lg border border-slate-600 w-80 flex-shrink-0">
+
+                      <div className="flex justify-between items-center">
+                        <p className="text-gray-500 text-xs uppercase tracking-widest font-semibold">
+                          Personal Services
+                        </p>
+                        <p className="text-emerald-300 font-bold text-lg">
+                          ₱{((rec.budget?.ps ?? 0) / 1000).toFixed(0)}K
+                        </p>
+                      </div>
+
+                      <div className="flex justify-between items-center">
+                        <p className="text-gray-500 text-xs uppercase tracking-widest font-semibold">
+                          MOOE
+                        </p>
+                        <p className="text-amber-300 font-bold text-lg">
+                          ₱{((rec.budget?.mooe ?? 0) / 1000).toFixed(0)}K
+                        </p>
+                      </div>
+
+                      <div className="flex justify-between items-center">
+                        <p className="text-gray-500 text-xs uppercase tracking-widest font-semibold">
+                          Capital Outlay
+                        </p>
+                        <p className="text-blue-300 font-bold text-lg">
+                          ₱{((rec.budget?.co ?? 0) / 1000).toFixed(0)}K
+                        </p>
+                      </div>
+
+                      <div className="h-px bg-slate-600"></div>
+
+                      <div className="flex justify-between items-center">
+                        <p className="text-gray-300 text-xs uppercase tracking-widest font-bold">
+                          Total Amount
+                        </p>
+                        <p className="text-white font-bold text-xl">
+                          ₱{(totalBudget / 1000).toFixed(0)}K
+                        </p>
+                      </div>
+
                     </div>
                   </div>
                 </div>
-
-              </div>
-            ))}
+              )
+            })}
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-20 text-center bg-slate-800/50 rounded-xl border border-slate-700">
             <Lightbulb size={56} className="text-slate-600 mb-4" />
-            <p className="text-gray-300 text-lg font-semibold mb-2">
-              No recommendations generated yet
-            </p>
-            <p className="text-gray-500 text-sm">
-              Click "Generate Recommendations" to start
-            </p>
+            <p className="text-gray-300 text-lg font-semibold mb-2">No recommendations generated yet</p>
+            <p className="text-gray-500 text-sm">Click "Generate Recommendations" to start</p>
           </div>
         )}
       </div>

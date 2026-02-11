@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useMemo, useCallback, memo} from "react";
 
 const tuboranCoords = { lat: 7.5065, lng: 125.8948 };
 
