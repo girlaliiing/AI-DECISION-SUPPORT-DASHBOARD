@@ -15,7 +15,7 @@ import {
   Tooltip,
 } from "recharts"
 import { ChevronDown, X } from "lucide-react"
-import { BarChart2, Trash2, Edit2 } from 'lucide-react'
+import { BarChart2 } from 'lucide-react'
 
 
 interface ServicesDashboardProps {
@@ -37,18 +37,14 @@ const COLORS = [
   "#a855f7",
 ]
 
-// separate edit
-const MINIMIZED_RADIUS = 70 // size when inside dashboard card
-const EXPANDED_RADIUS = 160 // size when modal is open
+const MINIMIZED_RADIUS = 70
+const EXPANDED_RADIUS = 160
 
-// civil donut inner sizes (distinct)
 const CIVIL_MIN_INNER = 40
 const CIVIL_EXP_INNER = 90
 
-// civil-specific color palette (so it looks distinct)
 const CIVIL_COLORS = ["#6D28D9", "#F97316", "#059669", "#8B5CF6", "#E11D48", "#065F46"]
 
-// gender colors
 const MALE_COLOR = "#2196F3"
 const FEMALE_COLOR = "#E91E63"
 
@@ -64,10 +60,10 @@ const COLORS_EXTENDED = [
 
 export default function ServicesDashboard({ title }: ServicesDashboardProps) {
   const [activeModal, setActiveModal] = useState<string | null>(null)
+  const [isDataLoaded, setIsDataLoaded] = useState(false)
   const [familiesPerPurok, setFamiliesPerPurok] = useState<{ name: string; value: number }[]>([])
   const [householdsPerPurok, setHouseholdsPerPurok] = useState<{ name: string; value: number }[]>([])
 
-  // gender
   const [genderTotals, setGenderTotals] = useState<{ male: number; female: number }>({
     male: 0,
     female: 0,
@@ -76,31 +72,26 @@ export default function ServicesDashboard({ title }: ServicesDashboardProps) {
     { name: string; male: number; female: number }[]
   >([])
 
-  // civil status
   const [civilStatusTotals, setCivilStatusTotals] = useState<{ name: string; value: number }[]>([])
-
-  // NEW STATE for Family Planning
   const [familyPlanningTotals, setFamilyPlanningTotals] = useState<{ name: string; value: number }[]>([])
 
-  // Religion and Community Group states
   const [religionTotals, setReligionTotals] = useState<{ name: string; value: number }[]>([])
   const [religionPerPurok, setReligionPerPurok] = useState<any[]>([])
 
   const [communityGroupTotals, setCommunityGroupTotals] = useState<{ name: string; value: number }[]>([])
   const [communityGroupPerPurok, setCommunityGroupPerPurok] = useState<any[]>([])
 
-  // Educational Attainment state
   const [educationTotals, setEducationTotals] = useState<{ name: string; value: number }[]>([])
 
   const [occupationTotals, setOccupationTotals] = useState<any[]>([])
   const [occupationPerPurok, setOccupationPerPurok] = useState<any[]>([])
 
-  // 4Ps, IPs, Toilet, MRF Segregated, Garden
   const [fourPsTotals, setFourPsTotals] = useState<{ name: string; value: number }[]>([])
   const [ipTotals, setIpTotals] = useState<{ name: string; value: number }[]>([])
   const [toiletTotals, setToiletTotals] = useState<{ name: string; value: number }[]>([])
   const [mrfTotals, setMrfTotals] = useState<{ name: string; value: number }[]>([])
   const [gardenTotals, setGardenTotals] = useState<{ name: string; value: number }[]>([])
+
   const colorMap = useMemo(() => {
     const map: Record<string, string> = {}
     const names = new Set<string>()
@@ -125,25 +116,54 @@ export default function ServicesDashboard({ title }: ServicesDashboardProps) {
     return map
   }, [civilStatusTotals])
 
+  // FIXED: Comparison data now includes all Puroks 1-12 in order
   const comparisonData = useMemo(() => {
     const map: Record<string, any> = {}
 
-    familiesPerPurok.forEach(f => {
-      map[f.name] = { name: f.name, families: f.value, households: 0 }
-    })
+    // Initialize all Puroks 1-12
+    for (let i = 1; i <= 12; i++) {
+      const purokName = `Purok ${i}`
+      map[purokName] = { name: purokName, families: 0, households: 0 }
+    }
 
-    householdsPerPurok.forEach(h => {
-      if (!map[h.name]) {
-        map[h.name] = { name: h.name, families: 0, households: h.value }
+    // Fill in families data
+    familiesPerPurok.forEach(f => {
+      const key = String(f.name)
+      if (map[key]) {
+        map[key].families = f.value
       } else {
-        map[h.name].households = h.value
+        map[key] = { name: key, families: f.value, households: 0 }
       }
     })
 
-    return Object.values(map)
+    // Fill in households data
+    householdsPerPurok.forEach(h => {
+      const key = String(h.name)
+      if (map[key]) {
+        map[key].households = h.value
+      } else {
+        map[key] = { name: key, families: 0, households: h.value }
+      }
+    })
+
+    // Convert to array and sort by Purok number
+    const dataArray = Object.values(map)
+    
+    // Custom sort to handle "Purok X" format
+    dataArray.sort((a: any, b: any) => {
+      const aMatch = a.name.match(/Purok (\d+)/)
+      const bMatch = b.name.match(/Purok (\d+)/)
+      
+      if (aMatch && bMatch) {
+        return parseInt(aMatch[1]) - parseInt(bMatch[1])
+      }
+      
+      return a.name.localeCompare(b.name)
+    })
+
+    return dataArray
   }, [familiesPerPurok, householdsPerPurok])
 
-  // Extract data application logic (kept identical)
   const applyData = useCallback((json: any) => {
     try {
       setFamiliesPerPurok(json.familiesPerPurok || [])
@@ -178,15 +198,15 @@ export default function ServicesDashboard({ title }: ServicesDashboardProps) {
       setMrfTotals(tryParseArray(json.mrfTotals))
       setGardenTotals(tryParseArray(json.gardenTotals))
 
+      setIsDataLoaded(true)
     } catch (err) {
       console.error("applyData failed:", err)
+      setIsDataLoaded(true)
     }
   }, [])
 
-
   useEffect(() => {
     async function loadData() {
-      // Load cached data if available
       const cached = localStorage.getItem("household-data");
 
       if (cached) {
@@ -194,7 +214,6 @@ export default function ServicesDashboard({ title }: ServicesDashboardProps) {
         applyData(parsed);
       }
 
-      // Fetch fresh data
       try {
         const res = await fetch("/api/household_data");
         const fresh = await res.json();
@@ -209,17 +228,17 @@ export default function ServicesDashboard({ title }: ServicesDashboardProps) {
         }
       } catch (err) {
         console.error("Failed to fetch household_data:", err);
+        if (!cached) setIsDataLoaded(true);
       }
     }
 
     loadData();
-  }, []);
-
+  }, [applyData]);
 
   const openModal = useCallback((id: string) => setActiveModal(id), [])
   const closeModal = useCallback(() => setActiveModal(null), [])
 
-  const ChartCard = ({
+  const ChartCard = memo(({
     id,
     title,
     height,
@@ -231,38 +250,46 @@ export default function ServicesDashboard({ title }: ServicesDashboardProps) {
     children: React.ReactNode
   }) => (
     <>
-      <div
-        className={`bg-gray-800 rounded-lg p-6 border border-gray-700 flex flex-col shadow-md transition-all hover:scale-[1.02] ${height}`}
-      >
+      <div className={`bg-gray-800 rounded-lg p-6 border border-gray-700 flex flex-col shadow-md transition-transform duration-200 hover:scale-[1.02] ${height}`}>
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-white font-semibold">{title}</h3>
-          <button onClick={() => openModal(id)} className="text-gray-400 hover:text-white">
+          <button 
+            onClick={() => openModal(id)} 
+            className="text-gray-400 hover:text-white"
+            aria-label={`Expand ${title}`}
+          >
             <ChevronDown size={20} />
           </button>
         </div>
-        {children}
+        <div className="flex-1 min-h-0 w-full">
+          {children}
+        </div>
       </div>
 
       {activeModal === id && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-gray-800 rounded-2xl p-8 border border-gray-700 w-[85%] max-w-5xl h-[90vh] overflow-hidden relative flex flex-col">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-800 rounded-2xl p-8 border border-gray-700 w-full max-w-5xl h-[90vh] overflow-hidden relative flex flex-col">
             <button
               onClick={closeModal}
-              className="absolute top-4 right-4 text-gray-400 hover:text-white"
+              className="absolute top-4 right-4 text-gray-400 hover:text-white z-10"
+              aria-label="Close modal"
             >
               <X size={24} />
             </button>
-            <h3 className="text-xl font-semibold text-white mb-6">{title}</h3>
-            <div className="h-[600px] w-full">{children}</div>
+            <h3 className="text-xl font-semibold text-white mb-6 flex-shrink-0">{title}</h3>
+            <div className="flex-1 w-full overflow-hidden">
+              {children}
+            </div>
           </div>
         </div>
       )}
     </>
-  )
+  ))
 
-  // FIXED Family Planning Bar Chart (no wordBreak; truncation for compact mode)
+  ChartCard.displayName = 'ChartCard'
+
   const FamilyPlanningBar = memo(function FamilyPlanningBar({ compact = false }: { compact?: boolean }) {
-    if (!familyPlanningTotals || familyPlanningTotals.length === 0) {
+    if (!isDataLoaded || !familyPlanningTotals || familyPlanningTotals.length === 0) {
       return (
         <div className="text-gray-400 text-center pt-10">
           No family planning data available.
@@ -270,58 +297,52 @@ export default function ServicesDashboard({ title }: ServicesDashboardProps) {
       )
     }
 
-    // truncate helper for tick labels in compact mode
     const truncate = (s: string, n = 12) => {
       if (!s) return ""
       return s.length > n ? `${s.slice(0, n - 1)}…` : s
     }
 
     return (
-      <div
-        className={`w-full ${compact ? "h-[300px]" : "h-[500px]"} flex items-center justify-center`}
-      >
-        <ResponsiveContainer width="100%" height="100%" minHeight={compact ? 280 : 400}>
-          <BarChart
-            data={familyPlanningTotals}
-            margin={{
-              top: 20,
-              right: 30,
-              left: 10,
-              bottom: compact ? 80 : 100,
-            }}
-          >
-            <CartesianGrid strokeDasharray="3 3" stroke="#4b5563" />
-            <XAxis
-              dataKey="name"
-              stroke="#9ca3af"
-              angle={compact ? -30 : -45}
-              textAnchor="end"
-              interval={0}
-              height={compact ? 80 : 100}
-              tick={{ fontSize: compact ? 10 : 12, fill: "#9ca3af" }}
-              tickFormatter={compact ? (v) => truncate(String(v), 12) : undefined}
-            />
-            <YAxis stroke="#9ca3af" tick={{ fontSize: compact ? 10 : 12 }} allowDecimals={false} />
-            <Tooltip
-              wrapperStyle={{ fontSize: "0.85rem" }}
-              contentStyle={{ backgroundColor: "#1f2937", border: "none" }}
-              cursor={{ fill: "rgba(59,130,246,0.05)" }}
-            />
-            {!compact && <Legend />}
-            <Bar
-              dataKey="value"
-              name="Count"
-              fill="#38bdf8"
-              barSize={compact ? 20 : 35}
-              radius={[6, 6, 0, 0]}
-            />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart
+          data={familyPlanningTotals}
+          margin={{
+            top: compact ? 10 : 20,
+            right: 30,
+            left: 10,
+            bottom: compact ? 0 : 100,
+          }}
+        >
+          <CartesianGrid strokeDasharray="3 3" stroke="#4b5563" />
+          <XAxis
+            dataKey="name"
+            stroke="#9ca3af"
+            angle={-45}
+            textAnchor="end"
+            interval={0}
+            height={compact ? 50 : 100}
+            tick={{ fontSize: compact ? 9 : 11, fill: "#9ca3af" }}
+            tickFormatter={compact ? (v) => truncate(String(v), 8) : undefined}
+          />
+          <YAxis stroke="#9ca3af" tick={{ fontSize: compact ? 10 : 12 }} allowDecimals={false} />
+          <Tooltip
+            contentStyle={{ backgroundColor: "#1f2937", border: "none" }}
+            cursor={{ fill: "rgba(59,130,246,0.05)" }}
+          />
+          {!compact && <Legend />}
+          <Bar
+            dataKey="value"
+            name="Count"
+            fill="#38bdf8"
+            barSize={compact ? 30 : 35}
+            radius={[6, 6, 0, 0]}
+            isAnimationActive={false}
+          />
+        </BarChart>
+      </ResponsiveContainer>
     )
   })
 
-  // Generic Expanded Chart (Pie + Bar) for Religion / Community Group
   const DualChartSection = memo(function DualChartSection({
     title,
     id,
@@ -333,7 +354,9 @@ export default function ServicesDashboard({ title }: ServicesDashboardProps) {
     pieData: { name: string; value: number }[]
     barData: any[]
   }) {
-    const expanded = useMemo(() => activeModal === id, [activeModal, id])
+    const expanded = activeModal === id
+    
+    if (!isDataLoaded) return null
 
     if (!expanded) {
       return (
@@ -343,7 +366,8 @@ export default function ServicesDashboard({ title }: ServicesDashboardProps) {
           ariaLabel={`${title} pie chart`}
           expandedLabelRenderer={renderExpandedLabelFamilies}
         />
-      )}
+      )
+    }
 
     const keys =
       Array.isArray(barData) && barData.length > 0
@@ -353,7 +377,7 @@ export default function ServicesDashboard({ title }: ServicesDashboardProps) {
     return (
       <div className="flex flex-col items-center justify-center w-full h-full space-y-2">
         <div className="flex w-full gap-4 items-center justify-center">
-          <div className="w-[40%] h-[260px] flex items-center justify-center">
+          <div className="w-[40%]" style={{ height: '260px' }}>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -362,6 +386,7 @@ export default function ServicesDashboard({ title }: ServicesDashboardProps) {
                   nameKey="name"
                   outerRadius={100}
                   labelLine={false}
+                  isAnimationActive={false}
                   label={(props: any) => {
                     const RADIAN = Math.PI / 180
                     const cx = Number(props.cx) || 0
@@ -389,7 +414,8 @@ export default function ServicesDashboard({ title }: ServicesDashboardProps) {
                         (0.299 * r + 0.587 * g + 0.114 * b) / 255
                       isLight = luminance > 0.7
                     } catch {
-                      isLight = false}
+                      isLight = false
+                    }
 
                     return (
                       <text
@@ -418,7 +444,7 @@ export default function ServicesDashboard({ title }: ServicesDashboardProps) {
             </ResponsiveContainer>
           </div>
 
-          <div className="w-[60%] h-[400px]">
+          <div className="w-[60%]" style={{ height: '400px' }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={barData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#4b5563" />
@@ -438,6 +464,7 @@ export default function ServicesDashboard({ title }: ServicesDashboardProps) {
                     dataKey={k}
                     fill={COLORS_EXTENDED[i % COLORS_EXTENDED.length]}
                     stackId="a"
+                    isAnimationActive={false}
                   />
                 ))}
               </BarChart>
@@ -463,259 +490,248 @@ export default function ServicesDashboard({ title }: ServicesDashboardProps) {
     )
   })
 
+  const EducationalAttainmentBar = memo(function EducationalAttainmentBar({ compact = false }: { compact?: boolean }) {
+    if (!isDataLoaded || !educationTotals || educationTotals.length === 0) {
+      return (
+        <div className="text-gray-400 text-center pt-10">
+          No educational attainment data available.
+        </div>
+      )
+    }
 
-    // Educational Attainment Horizontal Bar Graph
-    const EducationalAttainmentBar = memo(function EducationalAttainmentBar({ compact = false }: { compact?: boolean }) {
-      if (!educationTotals || educationTotals.length === 0) {
+    const truncate = (s: string, n = 14) => {
+      if (!s) return ""
+      return s.length > n ? `${s.slice(0, n - 1)}…` : s
+    }
+
+    return (
+      <div className="w-full h-full flex items-center justify-center">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart
+            data={educationTotals}
+            layout="vertical"
+            margin={{
+              top: 20,
+              right: 30,
+              left: compact ? 20 : 80,
+              bottom: 20,
+            }}
+          >
+            <CartesianGrid strokeDasharray="3 3" stroke="#4b5563" />
+            <XAxis type="number" stroke="#9ca3af" />
+            <YAxis
+              dataKey="name"
+              type="category"
+              width={compact ? 80 : 180}
+              tick={{
+                fontSize: compact ? 10 : 12,
+                fill: "#9ca3af",
+              }}
+              tickFormatter={compact ? (v) => truncate(String(v), 14) : undefined}
+            />
+            <Tooltip contentStyle={{ backgroundColor: "#1f2937", border: "none" }} />
+            {!compact && <Legend />}
+            <Bar
+              dataKey="value"
+              name="Count"
+              fill="#8b5cf6"
+              barSize={compact ? 14 : 24}
+              radius={[0, 6, 6, 0]}
+              isAnimationActive={false}
+            />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    )
+  })
+
+  const OccupationBar = memo(function OccupationBar({ compact = false }: { compact?: boolean }) {
+    if (!isDataLoaded || !occupationPerPurok || occupationPerPurok.length === 0) {
+      return (
+        <div className="text-gray-400 text-center pt-10">
+          No occupation data available.
+        </div>
+      )
+    }
+
+    const occupationKeys = [
+      ...new Set(
+        occupationPerPurok.flatMap((item) =>
+          Object.keys(item).filter((key) => key !== "name")
+        )
+      ),
+    ]
+
+    const validKeys = occupationKeys.filter((key) =>
+      occupationPerPurok.some(
+        (item) => typeof item[key] === "number" && item[key] > 0
+      )
+    )
+
+    const occupationTotals: Record<string, number> = {}
+    occupationPerPurok.forEach((row) => {
+      validKeys.forEach((key) => {
+        if (typeof row[key] === "number") {
+          occupationTotals[key] = (occupationTotals[key] || 0) + row[key]
+        }
+      })
+    })
+
+    const topOccupations = Object.entries(occupationTotals)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+
+    const truncate = (s: string, n = 12) =>
+      s && s.length > n ? `${s.slice(0, n - 1)}…` : s
+
+    const CustomTooltip = ({ active, payload, label }: any) => {
+      if (active && payload && payload.length) {
+        const MAX_ITEMS = 15
+        const visibleItems = payload.slice(0, MAX_ITEMS)
+        const hiddenCount = payload.length - visibleItems.length
+
         return (
-          <div className="text-gray-400 text-center pt-10">
-            No educational attainment data available.
+          <div
+            style={{
+              backgroundColor: "#1f2937",
+              border: "1px solid #374151",
+              borderRadius: "6px",
+              padding: "6px 8px",
+              color: "#f3f4f6",
+              fontSize: "0.6rem",
+              width: "160px",
+              pointerEvents: "none",
+            }}
+          >
+            <p
+              style={{
+                marginBottom: "4px",
+                fontWeight: 600,
+                fontSize: "0.7rem",
+                color: "#f9fafb",
+              }}
+            >
+              {label}
+            </p>
+            {visibleItems.map((entry: any, index: number) => (
+              <div
+                key={`item-${index}`}
+                style={{
+                  color: entry.color,
+                  marginBottom: "2px",
+                  whiteSpace: "nowrap",
+                  textOverflow: "ellipsis",
+                  overflow: "hidden",
+                }}
+              >
+                {`${entry.name} : ${entry.value}`}
+              </div>
+            ))}
+            {hiddenCount > 0 && (
+              <div
+                style={{
+                  color: "#9ca3af",
+                  marginTop: "4px",
+                  fontStyle: "italic",
+                }}
+              >
+                +{hiddenCount} more…
+              </div>
+            )}
           </div>
         )
       }
+      return null
+    }
 
-      const truncate = (s: string, n = 14) => {
-        if (!s) return ""
-        return s.length > n ? `${s.slice(0, n - 1)}…` : s
-      }
-
-      return (
-        <div
-          className={`w-full ${compact ? "h-[300px]" : "h-[500px]"} flex items-center justify-center`}
-        >
+    return (
+      <div className={`w-full flex ${compact ? "h-full flex-col" : "flex-col lg:flex-row h-full"} gap-4`}>
+        <div className="flex-1 flex items-center justify-center min-h-0">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
-              data={educationTotals}
+              data={occupationPerPurok}
               layout="vertical"
               margin={{
-                top: 20,
-                right: 30,
-                left: compact ? 20 : 80,
-                bottom: 20,
+                top: 10,
+                right: 40,
+                left: compact ? 35 : 100,
+                bottom: 10,
               }}
             >
-              <CartesianGrid strokeDasharray="3 3" stroke="#4b5563" />
-              <XAxis type="number" stroke="#9ca3af" />
+              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+              <XAxis
+                type="number"
+                stroke="#9ca3af"
+                tick={{ fontSize: 9 }}
+                domain={[0, "dataMax + 50"]}
+              />
               <YAxis
                 dataKey="name"
                 type="category"
-                width={compact ? 80 : 180}
                 tick={{
-                  fontSize: compact ? 10 : 12,
+                  fontSize: 9,
                   fill: "#9ca3af",
                 }}
-                tickFormatter={compact ? (v) => truncate(String(v), 14) : undefined}
+                tickFormatter={compact ? (v) => truncate(String(v), 10) : undefined}
+                width={compact ? 40 : 80}
               />
-              <Tooltip
-                wrapperStyle={{ fontSize: "0.85rem" }}
-                contentStyle={{ backgroundColor: "#1f2937", border: "none" }}
-              />
-              {!compact && <Legend />}
-              <Bar
-                dataKey="value"
-                name="Count"
-                fill="#8b5cf6"
-                barSize={compact ? 14 : 24}
-                radius={[0, 6, 6, 0]}
-              />
+              <Tooltip content={<CustomTooltip />} />
+
+              {validKeys.map((key, i) => (
+                <Bar
+                  key={key}
+                  dataKey={key}
+                  stackId="a"
+                  fill={COLORS_EXTENDED[i % COLORS_EXTENDED.length]}
+                  barSize={compact ? 10 : 20}
+                  radius={[0, 0, 0, 0]}
+                  isAnimationActive={false}
+                />
+              ))}
             </BarChart>
           </ResponsiveContainer>
         </div>
-      )
-    })
 
-    // Occupation Horizontal BarChart
-    const OccupationBar = memo(function OccupationBar({ compact = false }: { compact?: boolean }) {
-      if (!occupationPerPurok || occupationPerPurok.length === 0) {
-        return (
-          <div className="text-gray-400 text-center pt-10">
-            No occupation data available.
-          </div>
-        )
-      }
-
-      const occupationKeys = [
-        ...new Set(
-          occupationPerPurok.flatMap((item) =>
-            Object.keys(item).filter((key) => key !== "name")
-          )
-        ),
-      ]
-
-      const validKeys = occupationKeys.filter((key) =>
-        occupationPerPurok.some(
-          (item) => typeof item[key] === "number" && item[key] > 0
-        )
-      )
-
-      // Compute Top 10 most common occupations
-      const occupationTotals: Record<string, number> = {}
-      occupationPerPurok.forEach((row) => {
-        validKeys.forEach((key) => {
-          if (typeof row[key] === "number") {
-            occupationTotals[key] = (occupationTotals[key] || 0) + row[key]
-          }
-        })
-      })
-
-      const topOccupations = Object.entries(occupationTotals)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 10)
-
-      const truncate = (s: string, n = 12) =>
-        s && s.length > n ? `${s.slice(0, n - 1)}…` : s
-
-      const CustomTooltip = ({ active, payload, label }: any) => {
-        if (active && payload && payload.length) {
-          const MAX_ITEMS = 15
-          const visibleItems = payload.slice(0, MAX_ITEMS)
-          const hiddenCount = payload.length - visibleItems.length
-
-          return (
-            <div
-              style={{
-                backgroundColor: "#1f2937",
-                border: "1px solid #374151",
-                borderRadius: "6px",
-                padding: "6px 8px",
-                color: "#f3f4f6",
-                fontSize: "0.6rem",
-                width: "160px",
-                pointerEvents: "none",
-              }}
-            >
-              <p
-                style={{
-                  marginBottom: "4px",
-                  fontWeight: 600,
-                  fontSize: "0.7rem",
-                  color: "#f9fafb",
-                }}
-              >
-                {label}
-              </p>
-              {visibleItems.map((entry: any, index: number) => (
-                <div
-                  key={`item-${index}`}
-                  style={{
-                    color: entry.color,
-                    marginBottom: "2px",
-                    whiteSpace: "nowrap",
-                    textOverflow: "ellipsis",
-                    overflow: "hidden",
-                  }}
-                >
-                  {`${entry.name} : ${entry.value}`}
-                </div>
+        {!compact && (
+          <div className="w-full lg:w-1/4 p-3 text-xs bg-transparent text-gray-300">
+            <h3 className="text-sm font-semibold text-white mb-2">
+              Top 10 Occupations
+            </h3>
+            <ol className="space-y-1">
+              {topOccupations.map(([name, count], idx) => (
+                <li key={idx} className="flex justify-between">
+                  <span className="truncate max-w-[130px]">{name}</span>
+                  <span className="text-gray-400 ml-2">{count}</span>
+                </li>
               ))}
-              {hiddenCount > 0 && (
-                <div
-                  style={{
-                    color: "#9ca3af",
-                    marginTop: "4px",
-                    fontStyle: "italic",
-                  }}
-                >
-                  +{hiddenCount} more…
-                </div>
-              )}
-            </div>
-          )
-        }
-        return null
-      }
-
-      return (
-        <div
-          className={`w-full flex ${
-            compact ? "h-72 flex-col" : "flex-col lg:flex-row h-[450px]"
-          } gap-4`}
-        >
-          {/* ====== Bar Graph Section ====== */}
-          <div className="flex-1 flex items-center justify-center">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={occupationPerPurok}
-                layout="vertical"
-                margin={{
-                  top: 10,
-                  right: 40,
-                  left: compact ? 35 : 100,
-                  bottom: 10,
-                }}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                <XAxis
-                  type="number"
-                  stroke="#9ca3af"
-                  tick={{ fontSize: 9 }}
-                  domain={[0, "dataMax + 50"]}
-                />
-                <YAxis
-                  dataKey="name"
-                  type="category"
-                  tick={{
-                    fontSize: 9,
-                    fill: "#9ca3af",
-                  }}
-                  tickFormatter={compact ? (v) => truncate(String(v), 10) : undefined}
-                  width={compact ? 40 : 80}
-                />
-                <Tooltip content={<CustomTooltip />} />
-
-                {validKeys.map((key, i) => (
-                  <Bar
-                    key={key}
-                    dataKey={key}
-                    stackId="a"
-                    fill={COLORS_EXTENDED[i % COLORS_EXTENDED.length]}
-                    barSize={compact ? 10 : 20}
-                    radius={[0, 0, 0, 0]}
-                  />
-                ))}
-              </BarChart>
-            </ResponsiveContainer>
+            </ol>
           </div>
+        )}
+      </div>
+    )
+  })
 
-          {/* ====== Top 10 Occupations (only if expanded) ====== */}
-          {!compact && (
-            <div className="w-full lg:w-1/4 p-3 text-xs bg-transparent text-gray-300">
-              <h3 className="text-sm font-semibold text-white mb-2">
-                Top 10 Occupations
-              </h3>
-              <ol className="space-y-1">
-                {topOccupations.map(([name, count], idx) => (
-                  <li key={idx} className="flex justify-between">
-                    <span className="truncate max-w-[130px]">{name}</span>
-                    <span className="text-gray-400 ml-2">{count}</span>
-                  </li>
-                ))}
-              </ol>
-            </div>
-          )}
-        </div>
-      )
-    })
+  const FiveDonutSection = memo(function FiveDonutSection({
+    id,
+    datasets,
+  }: {
+    id: string
+    datasets: { name: string; data: { name: string; value: number }[] }[]
+  }) {
+    const expanded = activeModal === id
+    
+    if (!isDataLoaded) return null
 
-    // === Five Donut Charts (4Ps, IPs, Toilet, MRF, Garden) ===
-    const FiveDonutSection = memo(function FiveDonutSection({
-      id,
-      datasets,
-    }: {
-      id: string
-      datasets: { name: string; data: { name: string; value: number }[] }[]
-    }) {
-      const expanded = useMemo(() => activeModal === id, [activeModal, id])
-
-      if (!expanded) {
-        return (
-          <div className="grid grid-cols-5 gap-4 w-full h-full">
-            {datasets.map((set) => (
-              <div key={set.name} className="flex flex-col items-center justify-center">
-                <div className="text-sm font-medium mb-1 text-gray-300">
-                  {set.name}
-                </div>
-                <ResponsiveContainer width="100%" height={130}>
+    if (!expanded) {
+      return (
+        <div className="grid grid-cols-5 gap-4 w-full h-full">
+          {datasets.map((set) => (
+            <div key={set.name} className="flex flex-col items-center justify-center">
+              <div className="text-sm font-medium mb-1 text-gray-300">
+                {set.name}
+              </div>
+              <div style={{ width: '100%', height: '130px' }}>
+                <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
                       data={set.data}
@@ -724,6 +740,7 @@ export default function ServicesDashboard({ title }: ServicesDashboardProps) {
                       innerRadius={25}
                       outerRadius={45}
                       labelLine={false}
+                      isAnimationActive={false}
                     >
                       {set.data.map((entry, j) => (
                         <Cell
@@ -736,95 +753,94 @@ export default function ServicesDashboard({ title }: ServicesDashboardProps) {
                   </PieChart>
                 </ResponsiveContainer>
               </div>
-            ))}
-          </div>
-        )}
-
-      // Expanded view
-      return (
-        <div className="flex flex-col gap-8 items-center justify-center w-full h-full scale-[0.9] origin-top">
-          <div className="grid grid-cols-3 gap-4 w-full">
-            {datasets.slice(0, 3).map((set) => (
-              <div
-                key={set.name}
-                className="flex flex-col items-center justify-center"
-                style={{ minHeight: 260 }}
-              >
-                {/* TITLE */}
-                <div className="text-base font-semibold mb-2 text-gray-200">
-                  {set.name}
-                </div>
-
-                {/* CHART */}
-                <ResponsiveContainer width="100%" height={200}>
-                  <PieChart>
-                    <Pie
-                      data={set.data}
-                      dataKey="value"
-                      nameKey="name"
-                      innerRadius={50}
-                      outerRadius={80}
-                      labelLine={false}
-                      label={({ name }) => name}
-                    >
-                      {set.data.map((entry, j) => (
-                        <Cell
-                          key={`${set.name}-${j}`}
-                          fill={COLORS_EXTENDED[j % COLORS_EXTENDED.length]}
-                        />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            ))}
-          </div>
-
-          <div className="grid grid-cols-2 gap-4 w-full">
-            {datasets.slice(3).map((set) => (
-              <div
-                key={set.name}
-                className="flex flex-col items-center justify-center"
-                style={{ minHeight: 260 }}
-              >
-                {/* TITLE */}
-                <div className="text-base font-semibold mb-2 text-gray-200">
-                  {set.name}
-                </div>
-
-                {/* CHART */}
-                <ResponsiveContainer width="100%" height={200}>
-                  <PieChart>
-                    <Pie
-                      data={set.data}
-                      dataKey="value"
-                      nameKey="name"
-                      innerRadius={50}
-                      outerRadius={80}
-                      labelLine={false}
-                      label={({ name }) => name}
-                    >
-                      {set.data.map((entry, j) => (
-                        <Cell
-                          key={`${set.name}-${j}`}
-                          fill={COLORS_EXTENDED[j % COLORS_EXTENDED.length]}
-                        />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
       )
-    })
+    }
 
+    return (
+      <div className="flex flex-col gap-8 items-center justify-center w-full h-full">
+        <div className="grid grid-cols-3 gap-4 w-full">
+          {datasets.slice(0, 3).map((set) => (
+            <div
+              key={set.name}
+              className="flex flex-col items-center justify-center"
+            >
+              <div className="text-base font-semibold mb-2 text-gray-200">
+                {set.name}
+              </div>
 
-  // pie label renderers
-  const renderMinimizedLabel = (props: any) => {
+              <div style={{ width: '100%', height: '200px' }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={set.data}
+                      dataKey="value"
+                      nameKey="name"
+                      innerRadius={50}
+                      outerRadius={80}
+                      labelLine={false}
+                      label={({ name }) => name}
+                      isAnimationActive={false}
+                    >
+                      {set.data.map((entry, j) => (
+                        <Cell
+                          key={`${set.name}-${j}`}
+                          fill={COLORS_EXTENDED[j % COLORS_EXTENDED.length]}
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-2 gap-4 w-full">
+          {datasets.slice(3).map((set) => (
+            <div
+              key={set.name}
+              className="flex flex-col items-center justify-center"
+            >
+              <div className="text-base font-semibold mb-2 text-gray-200">
+                {set.name}
+              </div>
+
+              <div style={{ width: '100%', height: '200px' }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={set.data}
+                      dataKey="value"
+                      nameKey="name"
+                      innerRadius={50}
+                      outerRadius={80}
+                      labelLine={false}
+                      label={({ name }) => name}
+                      isAnimationActive={false}
+                    >
+                      {set.data.map((entry, j) => (
+                        <Cell
+                          key={`${set.name}-${j}`}
+                          fill={COLORS_EXTENDED[j % COLORS_EXTENDED.length]}
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  })
+
+  const renderMinimizedLabel = useCallback((props: any) => {
     const { x, y, value } = props
     return (
       <text
@@ -838,9 +854,9 @@ export default function ServicesDashboard({ title }: ServicesDashboardProps) {
         {value}
       </text>
     )
-  }
+  }, [])
 
-  const renderExpandedLabelFamilies = (props: any) => {
+  const renderExpandedLabelFamilies = useCallback((props: any) => {
     const { x, y, value } = props
     return (
       <text
@@ -854,10 +870,9 @@ export default function ServicesDashboard({ title }: ServicesDashboardProps) {
         {`${value} Families`}
       </text>
     )
-  }
+  }, [])
 
-  // Civil: expanded labels OUTSIDE the slice with connector lines, format "Name (value)"
-  const renderCivilExpandedLabel = (props: any) => {
+  const renderCivilExpandedLabel = useCallback((props: any) => {
     const RAD = Math.PI / 180
     const { cx, cy, midAngle, outerRadius, name, value } = props
     const cxN = Number(cx) || 0
@@ -879,10 +894,9 @@ export default function ServicesDashboard({ title }: ServicesDashboardProps) {
         {`${name} (${value})`}
       </text>
     )
-  }
+  }, [])
 
-  // reusable PieSection component for standard pies (families/households)
-  const PieSection = ({
+  const PieSection = memo(({
     id,
     data,
     ariaLabel,
@@ -902,37 +916,44 @@ export default function ServicesDashboard({ title }: ServicesDashboardProps) {
     const expanded = activeModal === id
     const outerRadius = expanded ? EXPANDED_RADIUS : MINIMIZED_RADIUS
     const innerRadius = expanded ? innerExp : innerMin
-    return (
-      <ResponsiveContainer width="100%" height="100%">
-        <PieChart aria-label={ariaLabel}>
-          <Pie
-            data={data}
-            dataKey="value"
-            nameKey="name"
-            cx="50%"
-            cy="50%"
-            outerRadius={outerRadius}
-            innerRadius={innerRadius}
-            label={expanded ? expandedLabelRenderer ?? renderExpandedLabelFamilies : renderMinimizedLabel}
-            labelLine={false}
-          >
-            {data.map((entry, i) => {
-              const fill =
-                (colorLookup && colorLookup[entry.name]) ??
-                colorMap[entry.name] ??
-                COLORS[i % COLORS.length]
-              return <Cell key={`cell-${i}-${entry.name}`} fill={fill} />
-            })}
-          </Pie>
-          {expanded && <Legend verticalAlign="bottom" wrapperStyle={{ color: "#d1d5db" }} />}
-          {expanded && <Tooltip />}
-        </PieChart>
-      </ResponsiveContainer>
-    )
-  }
+    
+    if (!isDataLoaded) return null
 
-  // Specialized component for Civil Status donut so we can enable label lines and legend on the RIGHT
-  const CivilDonutSection = ({
+    return (
+      <div className="w-full h-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart aria-label={ariaLabel}>
+            <Pie
+              data={data}
+              dataKey="value"
+              nameKey="name"
+              cx="50%"
+              cy="50%"
+              outerRadius={outerRadius}
+              innerRadius={innerRadius}
+              label={expanded ? expandedLabelRenderer ?? renderExpandedLabelFamilies : renderMinimizedLabel}
+              labelLine={false}
+              isAnimationActive={false}
+            >
+              {data.map((entry, i) => {
+                const fill =
+                  (colorLookup && colorLookup[entry.name]) ??
+                  colorMap[entry.name] ??
+                  COLORS[i % COLORS.length]
+                return <Cell key={`cell-${i}-${entry.name}`} fill={fill} />
+              })}
+            </Pie>
+            {expanded && <Legend verticalAlign="bottom" wrapperStyle={{ color: "#d1d5db" }} />}
+            {expanded && <Tooltip />}
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
+    )
+  })
+
+  PieSection.displayName = 'PieSection'
+
+  const CivilDonutSection = memo(({
     id,
     data,
     ariaLabel,
@@ -945,10 +966,12 @@ export default function ServicesDashboard({ title }: ServicesDashboardProps) {
     const outerRadius = expanded ? EXPANDED_RADIUS : MINIMIZED_RADIUS
     const innerRadius = expanded ? CIVIL_EXP_INNER : CIVIL_MIN_INNER
 
+    if (!isDataLoaded) return null
+
     if (expanded) {
       return (
         <div className="w-full h-full flex items-center">
-          <div className="flex-1 h-full">
+          <div className="flex-1 h-full min-h-0">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -961,6 +984,7 @@ export default function ServicesDashboard({ title }: ServicesDashboardProps) {
                   innerRadius={innerRadius}
                   label={renderCivilExpandedLabel}
                   labelLine={true}
+                  isAnimationActive={false}
                 >
                   {data.map((entry, i) => {
                     const fill =
@@ -1000,32 +1024,36 @@ export default function ServicesDashboard({ title }: ServicesDashboardProps) {
     }
 
     return (
-      <ResponsiveContainer width="100%" height="100%">
-        <PieChart>
-          <Pie
-            data={data}
-            dataKey="value"
-            nameKey="name"
-            cx="50%"
-            cy="50%"
-            outerRadius={outerRadius}
-            innerRadius={innerRadius}
-            label={renderMinimizedLabel}
-            labelLine={false}
-          >
-            {data.map((entry, i) => {
-              const fill =
-                civilColorMap[entry.name] ?? CIVIL_COLORS[i % CIVIL_COLORS.length]
-              return <Cell key={`cell-civil-mini-${i}-${entry.name}`} fill={fill} />
-            })}
-          </Pie>
-        </PieChart>
-      </ResponsiveContainer>
+      <div className="w-full h-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={data}
+              dataKey="value"
+              nameKey="name"
+              cx="50%"
+              cy="50%"
+              outerRadius={outerRadius}
+              innerRadius={innerRadius}
+              label={renderMinimizedLabel}
+              labelLine={false}
+              isAnimationActive={false}
+            >
+              {data.map((entry, i) => {
+                const fill =
+                  civilColorMap[entry.name] ?? CIVIL_COLORS[i % CIVIL_COLORS.length]
+                return <Cell key={`cell-civil-mini-${i}-${entry.name}`} fill={fill} />
+              })}
+            </Pie>
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
     )
-  }
+  })
 
-  // Gender helpers and components
-  const genderPercentages = () => {
+  CivilDonutSection.displayName = 'CivilDonutSection'
+
+  const genderPercentages = useCallback(() => {
     const male = genderTotals.male || 0
     const female = genderTotals.female || 0
     const total = male + female
@@ -1035,10 +1063,13 @@ export default function ServicesDashboard({ title }: ServicesDashboardProps) {
       femalePct: 100 - Math.round((male / total) * 100),
       total,
     }
-  }
+  }, [genderTotals])
 
-  const GenderMinimized = () => {
+  const GenderMinimized = memo(function GenderMinimized() {
     const { malePct, femalePct } = genderPercentages()
+    
+    if (!isDataLoaded) return null
+
     return (
       <div className="w-full h-full flex flex-col items-center justify-center">
         <div className="flex items-center gap-6">
@@ -1071,59 +1102,63 @@ export default function ServicesDashboard({ title }: ServicesDashboardProps) {
         </div>
       </div>
     )
-  }
+  })
 
-  const GenderExpanded = () => {
+  const GenderExpanded = memo(function GenderExpanded() {
+    if (!isDataLoaded) return null
+    
     const data = genderPerPurok.map((g) => ({
       name: g.name,
       male: g.male,
       female: g.female,
     }))
+    
     return (
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 60 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#4b5563" />
-          <XAxis
-            dataKey="name"
-            stroke="#9ca3af"
-            interval={0}
-            angle={-20}
-            textAnchor="end"
-            height={60}
-          />
-          <YAxis stroke="#9ca3af" />
-          <Tooltip />
-          <Bar dataKey="male" name="Male" fill={MALE_COLOR} />
-          <Bar dataKey="female" name="Female" fill={FEMALE_COLOR} />
-        </BarChart>
-      </ResponsiveContainer>
+      <div className="w-full h-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 60 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#4b5563" />
+            <XAxis
+              dataKey="name"
+              stroke="#9ca3af"
+              interval={0}
+              angle={-20}
+              textAnchor="end"
+              height={60}
+            />
+            <YAxis stroke="#9ca3af" />
+            <Tooltip />
+            <Bar dataKey="male" name="Male" fill={MALE_COLOR} isAnimationActive={false} />
+            <Bar dataKey="female" name="Female" fill={FEMALE_COLOR} isAnimationActive={false} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    )
+  })
+
+  if (!isDataLoaded) {
+    return (
+      <div className="w-full h-full bg-gray-900 flex items-center justify-center">
+        <div className="text-white text-xl">Loading dashboard data...</div>
+      </div>
     )
   }
 
   return (
     <div className="w-full h-full bg-gray-900 p-8 overflow-auto">
-      {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-4">
-            <BarChart2 size={32} className="text-red-400" />
-            <h1 className="text-3xl font-bold text-white">Demographic Charts</h1>
-          </div>
-          <p className="text-gray-400">Monitor and interpret key demographic indicators across the barangay</p>
+      <div className="mb-8">
+        <div className="flex items-center gap-3 mb-4">
+          <BarChart2 size={32} className="text-red-400" />
+          <h1 className="text-3xl font-bold text-white">Demographic Charts</h1>
         </div>
+        <p className="text-gray-400">Monitor and interpret key demographic indicators across the barangay.</p>
+      </div>
 
       <div className="grid grid-cols-3 gap-6 items-start">
-        {/* Gender card */}
         <ChartCard id="gender" title="Gender" height="h-72">
-          {activeModal === "gender" ? (
-            <div className="w-full h-full">
-              <GenderExpanded />
-            </div>
-          ) : (
-            <GenderMinimized />
-          )}
+          {activeModal === "gender" ? <GenderExpanded /> : <GenderMinimized />}
         </ChartCard>
 
-        {/* Families pie */}
         <ChartCard id="families-purok" title="Families per Purok" height="h-72">
           <PieSection
             id="families-purok"
@@ -1133,7 +1168,6 @@ export default function ServicesDashboard({ title }: ServicesDashboardProps) {
           />
         </ChartCard>
 
-        {/* Households pie */}
         <ChartCard id="households-purok" title="Households per Purok" height="h-72">
           <PieSection
             id="households-purok"
@@ -1143,68 +1177,52 @@ export default function ServicesDashboard({ title }: ServicesDashboardProps) {
         </ChartCard>
 
         <div className="grid grid-cols-[68%_30%] gap-6 items-start col-span-3 w-full">
-
-          {/* Families vs Households */}
           <div className="w-full">
             <ChartCard
               id="purok-compare"
               title="Families vs Households (per Purok) - comparison"
               height="h-72"
             >
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={comparisonData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#4b5563" />
-                  <XAxis dataKey="name" stroke="#9ca3af" />
-                  <YAxis stroke="#9ca3af" />
-                  <Tooltip />
-                  <Bar dataKey="families" fill="#3b82f6" />
-                  <Bar dataKey="households" fill="#10b981" />
-                </BarChart>
-              </ResponsiveContainer>
+              <div className="w-full h-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={comparisonData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#4b5563" />
+                    <XAxis dataKey="name" stroke="#9ca3af" />
+                    <YAxis stroke="#9ca3af" />
+                    <Tooltip />
+                    <Bar dataKey="families" fill="#3b82f6" isAnimationActive={false} />
+                    <Bar dataKey="households" fill="#10b981" isAnimationActive={false} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             </ChartCard>
           </div>
 
-          {/*Educational Attainment  */}
           <div className="w-full">
             <ChartCard
               id="education"
               title="Educational Attainment"
               height="h-72"
             >
-              {activeModal === "education" ? (
-                <EducationalAttainmentBar compact={false} />
-              ) : (
-                <EducationalAttainmentBar compact={true} />
-              )}
+              <EducationalAttainmentBar compact={activeModal !== "education"} />
             </ChartCard>
           </div>
-
         </div>
 
-        {/* Civil Status (30%) and Family Planning (70%) side by side like the Gender row */}
         <div className="grid grid-cols-[30%_68%] gap-6 items-start col-span-3">
-          {/* Civil Status */}
           <ChartCard id="civil-status" title="Civil Status" height="h-72">
-            <div className="w-full h-full">
-              <CivilDonutSection
-                id="civil-status"
-                data={civilStatusTotals}
-                ariaLabel="Civil status donut chart"
-              />
-            </div>
+            <CivilDonutSection
+              id="civil-status"
+              data={civilStatusTotals}
+              ariaLabel="Civil status donut chart"
+            />
           </ChartCard>
 
-          {/* Family Planning */}
           <ChartCard id="family-planning" title="Family Planning (Females Only)" height="h-72">
-            {activeModal === "family-planning" ? (
-              <FamilyPlanningBar compact={false} />
-            ) : (
-              <FamilyPlanningBar compact />
-            )}
+            <FamilyPlanningBar compact={activeModal !== "family-planning"} />
           </ChartCard>
         </div>
 
-        {/* Religion and Community Group */}
         <div className="grid grid-cols-2 gap-6 items-start col-span-3">
           <ChartCard id="religion" title="Religion" height="h-72">
             {religionTotals.length > 0 || religionPerPurok.length > 0 ? (
@@ -1237,9 +1255,7 @@ export default function ServicesDashboard({ title }: ServicesDashboardProps) {
           </ChartCard>
         </div>
 
-        {/* Occupation and 4Ps / IPs / Toilet / MRF / Garden */}
         <div className="grid grid-cols-[30%_68%] gap-6 items-start col-span-3">
-          {/* Occupation */}
           <ChartCard id="occupation" title="Occupation" height="h-72">
             {occupationPerPurok.length > 0 ? (
               <OccupationBar compact={activeModal !== "occupation"} />
@@ -1250,7 +1266,6 @@ export default function ServicesDashboard({ title }: ServicesDashboardProps) {
             )}
           </ChartCard>
 
-          {/* 4Ps / IPs / Toilet / MRF / Garden */}
           <ChartCard id="services" title="Household and Community Participation Indicators" height="h-72">
             {fourPsTotals.length > 0 ||
             ipTotals.length > 0 ||
@@ -1260,8 +1275,8 @@ export default function ServicesDashboard({ title }: ServicesDashboardProps) {
               <FiveDonutSection
                 id="services"
                 datasets={[
-                  { name: "4P’S", data: fourPsTotals },
-                  { name: "IP’S", data: ipTotals },
+                  { name: "4P'S", data: fourPsTotals },
+                  { name: "IP'S", data: ipTotals },
                   { name: "TOILET", data: toiletTotals },
                   { name: "MRF SEGREGATED", data: mrfTotals },
                   { name: "GARDEN", data: gardenTotals },
@@ -1274,7 +1289,6 @@ export default function ServicesDashboard({ title }: ServicesDashboardProps) {
             )}
           </ChartCard>
         </div>
-
       </div>
     </div>
   )

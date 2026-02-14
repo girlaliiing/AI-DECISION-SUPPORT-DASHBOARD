@@ -1,13 +1,17 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { X, ChevronDown } from "lucide-react";
+import { X } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-// Dynamic import (no SSR)
+// Dynamic import with minimal loading state
 const CesiumMap = dynamic(() => import("./CesiumMap"), {
   ssr: false,
-  loading: () => <p>Loading 3D map…</p>,
+  loading: () => (
+    <div className="w-full h-full flex items-center justify-center bg-gray-900">
+      <p className="text-white text-sm">Loading map...</p>
+    </div>
+  ),
 });
 
 export default function MapPage() {
@@ -15,13 +19,11 @@ export default function MapPage() {
 
   return (
     <div className="relative w-full h-screen overflow-hidden">
-
       {/* Close button returns to main dashboard */}
       <button
         onClick={() => router.push("/dashboard")}
-        className={`absolute top-2 right-12 z-[9999] 
-          ${false ? "bg-gray-400 text-white" : "bg-transparent text-white"} 
-          rounded-full p-2 shadow-xl hover:bg-gray-400 transition-colors`}
+        className="absolute top-2 right-12 z-[9999] bg-transparent text-white rounded-full p-2 shadow-xl hover:bg-gray-400 transition-colors"
+        aria-label="Close map"
       >
         <X size={26} />
       </button>

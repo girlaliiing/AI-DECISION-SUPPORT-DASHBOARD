@@ -1,5 +1,7 @@
 "use client"
 
+export const dynamic = "force-dynamic";
+
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { X } from "lucide-react" 
@@ -45,8 +47,13 @@ export default function UpdateDataPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-100 via-purple-100 to-blue-50 p-8 flex items-center justify-center">
       <div className="w-full max-w-2xl">
+      {/* Backdrop with blur effect */}
+      <div 
+        className="absolute inset-0 bg-black/50 backdrop-blur-md"
+      />
+      
         {/* Form Card */}
-        <div className="bg-slate-800 rounded-2xl p-8 space-y-6 relative">
+        <div className="bg-gray-900 rounded-3xl p-12 space-y-6 relative shadow-2xl">
           {/* Exit (X) Icon Button */}
           <button
             onClick={handleExit}
@@ -60,37 +67,37 @@ export default function UpdateDataPage() {
 
           <input
             type="text"
-            placeholder="Purok Number (Ex. 1)"
+            placeholder="Purok Number (Ex. 1) *"
             value={purokNumber}
             onChange={(e) => setPurokNumber(e.target.value)}
-            className="w-full px-4 py-3 bg-gray-600 text-white rounded-lg placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            className="w-full px-4 py-2 rounded-full bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
           />
 
-          <h2 className="text-2xl font-bold text-white mb-4 mt-8">Full name (Head of the Family):</h2>
+          <h2 className="text-2xl font-bold text-white mb-4 mt-4">Full name (Head of the Family):</h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <input
               type="text"
-              placeholder="First Name (Ex. JUAN)"
+              placeholder="First Name (Ex. JUAN) *"
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
-              className="px-4 py-3 bg-gray-600 text-white rounded-lg placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              className="px-4 py-2 rounded-full bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
             />
             <input
               type="text"
-              placeholder="Middle Name (Ex. SANTOS)"
+              placeholder="Middle Name (Ex. SANTOS) *"
               value={middleName}
               onChange={(e) => setMiddleName(e.target.value)}
-              className="px-4 py-3 bg-gray-600 text-white rounded-lg placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              className="px-4 py-2 rounded-full bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
             />
           </div>
 
           <input
             type="text"
-            placeholder="Last Name (Ex. DELA CRUZ)"
+            placeholder="Last Name (Ex. DELA CRUZ) *"
             value={lastName}
             onChange={(e) => setLastName(e.target.value)}
-            className="w-full px-4 py-3 bg-gray-600 text-white rounded-lg placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            className="w-full px-4 py-2 rounded-full bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
           />
 
           <input
@@ -98,12 +105,12 @@ export default function UpdateDataPage() {
             placeholder="Suffix (Ex. JR)"
             value={suffix}
             onChange={(e) => setSuffix(e.target.value)}
-            className="w-full px-4 py-3 bg-gray-600 text-white rounded-lg placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            className="w-full px-4 py-2 rounded-full bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
           />
 
           <button
             onClick={handleSubmit}
-            className="w-full px-8 py-3 bg-white text-slate-900 font-semibold rounded-lg hover:bg-gray-100 transition-colors mt-8"
+            className="w-full py-2 rounded-full bg-white text-gray-900 font-semibold hover:bg-gray-100 transition text-lg"
           >
             Submit
           </button>

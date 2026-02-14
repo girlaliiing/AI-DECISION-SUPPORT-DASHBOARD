@@ -49,13 +49,20 @@ export default function SignupPage({ onSuccess, onToggle }: SignupPageProps) {
   }
 
   return (
-    <div className="w-full min-h-screen flex items-center justify-center p-4">
-      <div className="relative bg-gray-900 rounded-3xl p-12 shadow-2xl w-full max-w-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop with blur effect */}
+      <div 
+        className="absolute inset-0 bg-black/50 backdrop-blur-md"
+        onClick={onToggle}
+      />
+
+      {/* Modal Content */}
+      <div className="relative bg-gray-900 rounded-3xl p-12 shadow-2xl w-full max-w-2xl z-10">
         <button
           type="button"
           onClick={onToggle}
           className="absolute top-6 right-6 text-gray-400 hover:text-white transition"
-          aria-label="Back"
+          aria-label="Close"
         >
           <X size={28} />
         </button>

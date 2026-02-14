@@ -1,6 +1,6 @@
 "use client"
-import { useState, useEffect } from "react"
-import { Trash2, Edit2, X, Check } from "lucide-react"
+import { useState, useEffect, useMemo } from "react"
+import { Trash2, Edit2, X, Check, Loader2 } from "lucide-react"
 
 interface Resident {
   _id: string
@@ -25,16 +25,38 @@ export default function ResidentFormPage({ onBack }: ResidentFormPageProps) {
   const [residents, setResidents] = useState<Record<number, Resident[]>>({})
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingData, setEditingData] = useState<Resident | null>(null)
-
   const [search, setSearch] = useState("")
+  const [debouncedSearch, setDebouncedSearch] = useState("")
+  const [isLoading, setIsLoading] = useState(true)
+  const [isInitialLoad, setIsInitialLoad] = useState(true)
 
-  const fetchResidents = async () => {
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search)
+    }, 300) // 300ms delay
+
+    return () => clearTimeout(timer)
+  }, [search])
+
+  const fetchResidents = async (showLoader = true) => {
+    if (showLoader) setIsLoading(true)
+    
     try {
-      const res = await fetch("/api/resident_data")
+      const res = await fetch("/api/resident_data", {
+        headers: {
+          'Cache-Control': 'no-cache',
+        }
+      })
       const raw = await res.json()
 
       const arr = raw.data ?? []
       const mapped: Record<number, Resident[]> = {}
+
+      // Pre-initialize all puroks to avoid empty state flicker
+      for (let i = 1; i <= 12; i++) {
+        mapped[i] = []
+      }
 
       arr.forEach((item: any) => {
         const purok = item.PUROK ?? 0
@@ -53,27 +75,44 @@ export default function ResidentFormPage({ onBack }: ResidentFormPageProps) {
           occupation: item["OCCUPATION"] ?? "",
         }
 
-        if (!mapped[purok]) mapped[purok] = []
-        mapped[purok].push(r)
+        if (purok >= 1 && purok <= 12) {
+          mapped[purok].push(r)
+        }
       })
 
       setResidents(mapped)
     } catch (err) {
       console.error("Failed:", err)
+    } finally {
+      setIsLoading(false)
+      setIsInitialLoad(false)
     }
   }
 
+  // Fetch data immediately on mount
   useEffect(() => {
     fetchResidents()
   }, [])
 
-  /** DELETE — refresh after removing */
+  /** DELETE — optimistic update for instant UI feedback */
   const handleDeleteResident = async (_id: string) => {
+    // Optimistic update - remove from UI immediately
+    const updatedResidents = { ...residents }
+    Object.keys(updatedResidents).forEach((purok) => {
+      updatedResidents[Number(purok)] = updatedResidents[Number(purok)].filter(
+        (r) => r._id !== _id
+      )
+    })
+    setResidents(updatedResidents)
+
     try {
       await fetch(`/api/resident_data?_id=${_id}`, { method: "DELETE" })
-      await fetchResidents()
+      // Silently refresh in background to ensure sync
+      await fetchResidents(false)
     } catch (err) {
       console.error("Error deleting resident:", err)
+      // Revert on error
+      await fetchResidents(false)
     }
   }
 
@@ -82,15 +121,16 @@ export default function ResidentFormPage({ onBack }: ResidentFormPageProps) {
     setEditingData({ ...resident })
   }
 
-  /** SAVE — preserves other DB fields */
+  /** SAVE — optimistic update */
   const handleSaveEdit = async () => {
     if (!editingData) return
 
-    const old = residents[selectedPurok].find(r => r._id === editingData._id)
+    const oldResident = residents[selectedPurok].find(r => r._id === editingData._id)
+    if (!oldResident) return
 
     const payload = {
       _id: editingData._id,
-      ...old,
+      ...oldResident,
       "SURNAME": editingData.surname,
       "GIVEN NAME": editingData.givenName,
       "MIDDLE NAME": editingData.middleName,
@@ -104,18 +144,29 @@ export default function ResidentFormPage({ onBack }: ResidentFormPageProps) {
       "PUROK": selectedPurok,
     }
 
+    // Optimistic update - update UI immediately
+    const updatedResidents = { ...residents }
+    const index = updatedResidents[selectedPurok].findIndex(r => r._id === editingData._id)
+    if (index !== -1) {
+      updatedResidents[selectedPurok][index] = { ...editingData }
+      setResidents(updatedResidents)
+    }
+
+    setEditingId(null)
+    setEditingData(null)
+
     try {
       await fetch("/api/resident_data", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       })
-
-      await fetchResidents()
-      setEditingId(null)
-      setEditingData(null)
+      // Silently refresh in background
+      await fetchResidents(false)
     } catch (err) {
       console.error("Error saving:", err)
+      // Revert on error
+      await fetchResidents(false)
     }
   }
 
@@ -125,19 +176,43 @@ export default function ResidentFormPage({ onBack }: ResidentFormPageProps) {
   }
 
   const purokList = Array.from({ length: 12 }, (_, i) => i + 1)
-  const currentResidents = residents[selectedPurok] ?? []
-  const allResidents = Object.values(residents).flat() ?? []
+  
+  // Memoize current residents to avoid recalculation
+  const currentResidents = useMemo(() => {
+    return residents[selectedPurok] ?? []
+  }, [residents, selectedPurok])
 
-  const filteredResidents =
-    search.trim() === ""
-      ? currentResidents
-      : allResidents.filter((r) => {
-          const term = search.toLowerCase()
-          return (
-            r.surname.toLowerCase().includes(term) ||
-            r.givenName.toLowerCase().includes(term)
-          )
-        })
+  // Memoize all residents to avoid recalculation
+  const allResidents = useMemo(() => {
+    return Object.values(residents).flat()
+  }, [residents])
+
+  // Memoize filtered results with debounced search
+  const filteredResidents = useMemo(() => {
+    if (debouncedSearch.trim() === "") {
+      return currentResidents
+    }
+
+    const term = debouncedSearch.toLowerCase()
+    return allResidents.filter((r) => {
+      return (
+        r.surname.toLowerCase().includes(term) ||
+        r.givenName.toLowerCase().includes(term)
+      )
+    })
+  }, [debouncedSearch, currentResidents, allResidents])
+
+  // Show loader only on initial load
+  if (isInitialLoad && isLoading) {
+    return (
+      <div className="w-full h-full bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 text-blue-500 animate-spin mx-auto mb-4" />
+          <p className="text-gray-400 text-lg">Loading resident data...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="w-full h-full bg-gray-900 p-8 overflow-auto">
@@ -154,14 +229,21 @@ export default function ResidentFormPage({ onBack }: ResidentFormPageProps) {
             <p className="text-gray-400">(Contains essential resident information)</p>
           </div>
 
-          <input
-            type="text"
-            placeholder="Search surname or first name..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="px-3 py-2 text-sm bg-gray-800 border border-gray-600
-                    rounded-lg text-white focus:ring-2 focus:ring-blue-400 w-64"
-          />
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search surname or first name..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="px-3 py-2 text-sm bg-gray-800 border border-gray-600
+                      rounded-lg text-white focus:ring-2 focus:ring-blue-400 w-64"
+            />
+            {search !== debouncedSearch && (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                <Loader2 className="w-4 h-4 text-gray-400 animate-spin" />
+              </div>
+            )}
+          </div>
         </div>
 
         {/* PUROK TABS */}
@@ -171,7 +253,7 @@ export default function ResidentFormPage({ onBack }: ResidentFormPageProps) {
               <button
                 key={purok}
                 onClick={() => setSelectedPurok(purok)}
-                className={`py-2 rounded-lg transition font-semibold text-sm ${
+                className={`py-2 rounded-lg transition font-semibold text-base ${
                   selectedPurok === purok
                     ? "bg-blue-600 text-white"
                     : "bg-gray-800 text-gray-400 hover:bg-gray-700"
@@ -187,7 +269,7 @@ export default function ResidentFormPage({ onBack }: ResidentFormPageProps) {
           <div className="bg-gray-800 rounded-lg p-8 text-center border border-gray-700">
             <p className="text-gray-400">
               No records found
-              {search.trim() === "" ? ` in Purok ${selectedPurok}` : ` for "${search}"`}
+              {debouncedSearch.trim() === "" ? ` in Purok ${selectedPurok}` : ` for "${debouncedSearch}"`}
             </p>
           </div>
         ) : (
@@ -195,17 +277,17 @@ export default function ResidentFormPage({ onBack }: ResidentFormPageProps) {
             <table className="w-full table-fixed">
               <thead>
                 <tr className="bg-gray-700 border-b border-gray-600 text-gray-300 text-xs">
-                  <th className="px-2 py-2 text-left">#Fam</th>
-                  <th className="px-2 py-2 text-left">HH #</th>
-                  <th className="px-2 py-2 text-left">Surname</th>
-                  <th className="px-2 py-2 text-left">Given</th>
-                  <th className="px-2 py-2 text-left">Middle</th>
-                  <th className="px-2 py-2 text-left">Age</th>
-                  <th className="px-2 py-2 text-left">Sex</th>
-                  <th className="px-2 py-2 text-left">Birthdate</th>
-                  <th className="px-2 py-2 text-left">Religion</th>
-                  <th className="px-2 py-2 text-left">Occupation</th>
-                  <th className="px-2 py-2 text-center">Act</th>
+                  <th className="px-2 py-2 text-left text-base">#Fam</th>
+                  <th className="px-2 py-2 text-left text-base">HH #</th>
+                  <th className="px-2 py-2 text-left text-base">Surname</th>
+                  <th className="px-2 py-2 text-left text-base">Given</th>
+                  <th className="px-2 py-2 text-left text-base">Middle</th>
+                  <th className="px-2 py-2 text-left text-base">Age</th>
+                  <th className="px-2 py-2 text-left text-base">Sex</th>
+                  <th className="px-2 py-2 text-left text-base">Birthdate</th>
+                  <th className="px-2 py-2 text-left text-base">Religion</th>
+                  <th className="px-2 py-2 text-left text-base">Occupation</th>
+                  <th className="px-2 py-2 text-center text-base">Act</th>
                 </tr>
               </thead>
 

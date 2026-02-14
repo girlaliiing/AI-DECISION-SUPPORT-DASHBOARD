@@ -19,14 +19,8 @@ export default function CommunityLanding() {
 
       {/* Logo and Title */}
       <div className="flex flex-col items-center gap-6 mb-12">
-        <div className="w-50 h-50 relative">
-          <Image
-            src="/barangay-tuboran-seal.png"
-            alt="Barangay Tuboran Logo"
-            width={160}
-            height={160}
-            className="w-full h-full object-cover scale-110"
-          />
+        <div className="w-48 h-48 mb-4 mt-4 rounded-full border-4 border-blue-600 overflow-hidden bg-white flex items-center justify-center transform scale-125">
+          <img src="/barangay-tuboran-seal.png" alt="BIDA Logo" className="w-full h-full object-cover" />
         </div>
 
         <div className="text-center">

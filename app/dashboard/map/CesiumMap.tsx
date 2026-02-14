@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useMemo, useCallback, memo} from "react";
+import { useEffect, useRef } from "react";
 
 const tuboranCoords = { lat: 7.5065, lng: 125.8948 };
 
@@ -29,7 +29,7 @@ export default function CesiumMap() {
 
         if (!mounted) return;
 
-        // Initialize viewer
+        // Initialize viewer with performance optimizations
         viewerRef.current = new Viewer(mapRef.current, {
           terrainProvider: createWorldTerrain ? createWorldTerrain() : undefined,
           baseLayerPicker: true,
@@ -40,12 +40,15 @@ export default function CesiumMap() {
           infoBox: false,
           sceneModePicker: false,
           navigationHelpButton: false,
+          // Performance optimizations
+          requestRenderMode: true,
+          maximumRenderTimeChange: Infinity,
         });
 
         const viewer = viewerRef.current;
 
-        // Fly camera to Tuboran
-        viewer.camera.flyTo({
+        // Set camera position IMMEDIATELY without animation
+        viewer.camera.setView({
           destination: Cartesian3.fromDegrees(
             tuboranCoords.lng,
             tuboranCoords.lat,
@@ -71,6 +74,9 @@ export default function CesiumMap() {
         // Optional: enable lighting and shadows
         viewer.scene.globe.enableLighting = true;
         viewer.scene.globe.depthTestAgainstTerrain = true;
+
+        // Force initial render
+        viewer.scene.requestRender();
       } catch (err) {
         console.error("Failed to initialize Cesium:", err);
       }

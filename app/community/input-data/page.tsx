@@ -78,8 +78,32 @@ export default function InputDataPage() {
     setForms(forms.map((form) => (form.id === id ? { ...form, [field]: value } : form)))
   }
 
+  const validateForm = (form: ResidentForm): boolean => {
+    // Check all required fields (excluding photo, prefix, suffix, and birthplace)
+    const requiredFields = [
+      'purok', 'surname', 'givenName', 'middleName', 'age', 'sex', 
+      'civilStatus', 'birthdate', 'familyPlanning', 'religion', 
+      'communityGroup', 'educationalAttainment', 'occupation', 
+      'fourPs', 'ipHousehold', 'haveToilet', 'mrfSegregation', 
+      'garden', 'smoker', 'classification'
+    ];
+
+    for (const field of requiredFields) {
+      if (!form[field as keyof ResidentForm] || form[field as keyof ResidentForm].trim() === "") {
+        return false;
+      }
+    }
+    return true;
+  }
 
   const handleAddSection = () => {
+    const currentForm = forms[currentPage];
+    
+    if (!validateForm(currentForm)) {
+      alert("Please fill up all required fields before adding a new section!");
+      return;
+    }
+
     const newForm = { ...emptyForm, id: Date.now().toString() }
     setForms([...forms, newForm])
     setCurrentPage(forms.length)
@@ -98,6 +122,15 @@ export default function InputDataPage() {
   }
 
   const handleSubmit = async () => {
+    // Validate all forms before submitting
+    for (let i = 0; i < forms.length; i++) {
+      if (!validateForm(forms[i])) {
+        alert(`Please fill up all required fields in Section ${i + 1} before submitting!`);
+        setCurrentPage(i); // Navigate to the incomplete form
+        return;
+      }
+    }
+
     setSubmitFlash(true);
     setTimeout(() => setSubmitFlash(false), 600);
 
@@ -161,16 +194,19 @@ export default function InputDataPage() {
 
         <div className="border-b border-gray-600 mb-8"></div>
 
+        <p className="text-gray-400">NOTE: Use UPPERCASE letters when filling out the form.</p>
+
         {/* CAROUSEL BAR */}
         <div className="flex items-center justify-between mb-6">
           <button
             onClick={handlePrev}
             disabled={currentPage === 0}
-            className={`text-white text-3xl px-2 ${
-              currentPage === 0 ? "opacity-20" : "opacity-100"
+            className={`flex items-center gap-2 text-white text-lg px-3 py-2 rounded transition-colors ${
+              currentPage === 0 ? "opacity-20 cursor-not-allowed" : "opacity-100 hover:bg-gray-700"
             }`}
           >
-            &lt;
+            <span className="text-3xl">&lt;</span>
+            <span className="text-sm">Previous</span>
           </button>
 
           <p className="text-gray-300 text-lg">
@@ -180,21 +216,22 @@ export default function InputDataPage() {
           <button
             onClick={handleNext}
             disabled={currentPage === forms.length - 1}
-            className={`text-white text-3xl px-2 ${
-              currentPage === forms.length - 1 ? "opacity-20" : "opacity-100"
+            className={`flex items-center gap-2 text-white text-lg px-3 py-2 rounded transition-colors ${
+              currentPage === forms.length - 1 ? "opacity-20 cursor-not-allowed" : "opacity-100 hover:bg-gray-700"
             }`}
           >
-            &gt;
+            <span className="text-sm">Next</span>
+            <span className="text-3xl">&gt;</span>
           </button>
         </div>
 
         {/* FORM CONTENT */}
-        <div className="space-y-8 max-w-6xl">
+        <div className="space-y-5 max-w-6xl">
 
           {/* Attach File + Purok */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <p className="text-white mb-3">Attach 2x2 photo</p>
+              <p className="text-sm text-gray-400">Attach 2x2 photo</p>
 
               <label className="flex items-center justify-start gap-3 bg-gray-600 rounded-lg px-4 py-2.5 cursor-pointer">
                 <input type="file" accept="image/*" className="hidden" />
@@ -205,13 +242,15 @@ export default function InputDataPage() {
               </label>
             </div>
 
-            <div className="flex flex-col justify-end">
+            <div>
+              <p className="text-sm text-gray-400">Purok *</p>
               <select
                 value={form.purok}
                 onChange={(e) => handleInputChange(form.id, "purok", e.target.value)}
-                className="px-4 py-3 bg-gray-600 text-white rounded-lg"
+                className="w-full px-4 py-3 bg-gray-600 text-white rounded-lg"
+                required
               >
-                <option value="">Purok</option>
+                <option value="">Select</option>
                 {Array.from({ length: 12 }, (_, i) => `${i + 1}`).map((x) => (
                   <option key={x} value={x}>
                     {x}
@@ -223,259 +262,322 @@ export default function InputDataPage() {
 
           {/* Name */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <input
-              type="text"
-              placeholder="Surname (Ex. DELA CRUZ)"
-              value={form.surname}
-              onChange={(e) => handleInputChange(form.id, "surname", e.target.value)}
-              className="px-4 py-3 bg-gray-600 text-white rounded-lg"
-            />
-            <input
-              type="text"
-              placeholder="Given Name (Ex. JUAN)"
-              value={form.givenName}
-              onChange={(e) => handleInputChange(form.id, "givenName", e.target.value)}
-              className="px-4 py-3 bg-gray-600 text-white rounded-lg"
-            />
-            <input
-              type="text"
-              placeholder="Middle Name (Ex. SANTOS)"
-              value={form.middleName}
-              onChange={(e) => handleInputChange(form.id, "middleName", e.target.value)}
-              className="px-4 py-3 bg-gray-600 text-white rounded-lg"
-            />
+            <div>
+              <p className="text-sm text-gray-400">Surname (Ex. DELA CRUZ) *</p>
+              <input
+                type="text"
+                value={form.surname}
+                onChange={(e) => handleInputChange(form.id, "surname", e.target.value)}
+                className="w-full px-4 py-3 bg-gray-600 text-white rounded-lg"
+                required
+              />
+            </div>
+            <div>
+              <p className="text-sm text-gray-400">Given Name (Ex. JUAN) *</p>
+              <input
+                type="text"
+                value={form.givenName}
+                onChange={(e) => handleInputChange(form.id, "givenName", e.target.value)}
+                className="w-full px-4 py-3 bg-gray-600 text-white rounded-lg"
+                required
+              />
+            </div>
+            <div>
+              <p className="text-sm text-gray-400">Middle Name (Ex. SANTOS) *</p>
+              <input
+                type="text"
+                value={form.middleName}
+                onChange={(e) => handleInputChange(form.id, "middleName", e.target.value)}
+                className="w-full px-4 py-3 bg-gray-600 text-white rounded-lg"
+                required
+              />
+            </div>
           </div>
 
           {/* Prefix + Suffix */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <input
-              type="text"
-              placeholder="Prefix (Ex. MX.)"
-              value={form.prefix}
-              onChange={(e) => handleInputChange(form.id, "prefix", e.target.value)}
-              className="px-4 py-3 bg-gray-600 text-white rounded-lg"
-            />
-
-            <input
-              type="text"
-              placeholder="Suffix (Ex. JR.)"
-              value={form.suffix}
-              onChange={(e) => handleInputChange(form.id, "suffix", e.target.value)}
-              className="px-4 py-3 bg-gray-600 text-white rounded-lg"
-            />
+            <div>
+              <p className="text-sm text-gray-400">Prefix (Ex. MX.)</p>
+              <input
+                type="text"
+                value={form.prefix}
+                onChange={(e) => handleInputChange(form.id, "prefix", e.target.value)}
+                className="w-full px-4 py-3 bg-gray-600 text-white rounded-lg"
+              />
+            </div>
+            <div>
+              <p className="text-sm text-gray-400">Suffix (Ex. JR.)</p>
+              <input
+                type="text"
+                value={form.suffix}
+                onChange={(e) => handleInputChange(form.id, "suffix", e.target.value)}
+                className="w-full px-4 py-3 bg-gray-600 text-white rounded-lg"
+              />
+            </div>
           </div>
 
           {/* Age + Sex + Civil */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <input
-              type="text"
-              placeholder="Age (Ex. 25)"
-              value={form.age}
-              onChange={(e) => handleInputChange(form.id, "age", e.target.value)}
-              className="px-4 py-3 bg-gray-600 text-white rounded-lg"
-            />
-
-            <select
-              value={form.sex}
-              onChange={(e) => handleInputChange(form.id, "sex", e.target.value)}
-              className="px-4 py-3 bg-gray-600 text-white rounded-lg"
-            >
-              <option value="">Sex</option>
-              <option value="F">F</option>
-              <option value="M">M</option>
-            </select>
-
-            <select
-              value={form.civilStatus}
-              onChange={(e) => handleInputChange(form.id, "civilStatus", e.target.value)}
-              className="px-4 py-3 bg-gray-600 text-white rounded-lg"
-            >
-              <option value="">Civil Status (Ex. MARRIED)</option>
-              {[
-                "Married",
-                "Single",
-                "Widowed/Widower",
-                "Separated",
-                "Live-In",
-                "Single Parent",
-              ].map((x) => (
-                <option key={x} value={x}>
-                  {x}
-                </option>
-              ))}
-            </select>
+            <div>
+              <p className="text-sm text-gray-400">Age (Ex. 25) *</p>
+              <input
+                type="text"
+                value={form.age}
+                onChange={(e) => handleInputChange(form.id, "age", e.target.value)}
+                className="w-full px-4 py-3 bg-gray-600 text-white rounded-lg"
+                required
+              />
+            </div>
+            <div>
+              <p className="text-sm text-gray-400">Sex *</p>
+              <select
+                value={form.sex}
+                onChange={(e) => handleInputChange(form.id, "sex", e.target.value)}
+                className="w-full px-4 py-3 bg-gray-600 text-white rounded-lg"
+                required
+              >
+                <option value="">Select</option>
+                <option value="F">F</option>
+                <option value="M">M</option>
+              </select>
+            </div>
+            <div>
+              <p className="text-sm text-gray-400">Civil Status (Ex. MARRIED) *</p>
+              <select
+                value={form.civilStatus}
+                onChange={(e) => handleInputChange(form.id, "civilStatus", e.target.value)}
+                className="w-full px-4 py-3 bg-gray-600 text-white rounded-lg"
+                required
+              >
+                <option value="">Select</option>
+                {[
+                  "Married",
+                  "Single",
+                  "Widowed/Widower",
+                  "Separated",
+                  "Live-In",
+                  "Single Parent",
+                ].map((x) => (
+                  <option key={x} value={x}>
+                    {x}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {/* Birthdate + Birthplace */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <input
-              type="date"
-              placeholder="Birthdate"
-              value={form.birthdate}
-              onChange={(e) => handleInputChange(form.id, "birthdate", e.target.value)}
-              className="px-4 py-3 bg-gray-600 text-white rounded-lg"
-            />
-
-            <input
-              type="text"
-              placeholder="Birthplace (Ex. TUBORAN)"
-              value={form.birthplace}
-              onChange={(e) => handleInputChange(form.id, "birthplace", e.target.value)}
-              className="px-4 py-3 bg-gray-600 text-white rounded-lg"
-            />
+            <div>
+              <p className="text-sm text-gray-400">Birthdate *</p>
+              <input
+                type="date"
+                value={form.birthdate}
+                onChange={(e) => handleInputChange(form.id, "birthdate", e.target.value)}
+                className="w-full px-4 py-3 bg-gray-600 text-white rounded-lg"
+                required
+              />
+            </div>
+            <div>
+              <p className="text-sm text-gray-400">Birthplace (Ex. TUBORAN)</p>
+              <input
+                type="text"
+                value={form.birthplace}
+                onChange={(e) => handleInputChange(form.id, "birthplace", e.target.value)}
+                className="w-full px-4 py-3 bg-gray-600 text-white rounded-lg"
+              />
+            </div>
           </div>
 
           {/* Family Planning */}
-          <input
-            type="text"
-            placeholder="Family Planning (Ex. NONE)"
-            value={form.familyPlanning}
-            onChange={(e) => handleInputChange(form.id, "familyPlanning", e.target.value)}
-            className="w-full px-4 py-3 bg-gray-600 text-white rounded-lg"
-          />
-
-          {/* Education + Religion + Community Group */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <select
-              value={form.educationalAttainment}
-              onChange={(e) => handleInputChange(form.id, "educationalAttainment", e.target.value)}
-              className="px-4 py-3 bg-gray-600 text-white rounded-lg"
-            >
-              <option value="">Educational Attainment (Ex. COLLEGE GRADUATE)</option>
-              {[
-                "None",
-                "Elementary Level",
-                "Elementary Graduate",
-                "High School Level",
-                "High School Graduate",
-                "ALS",
-                "Senior High School Level",
-                "Senior High School Graduate",
-                "Vocational",
-                "College Level",
-                "College Graduate",
-                "Postgraduate",
-              ].map((x) => (
-                <option key={x} value={x}>
-                  {x}
-                </option>
-              ))}
-            </select>
-
+          <div>
+            <p className="text-sm text-gray-400">Family Planning (Ex. NONE) *</p>
             <input
               type="text"
-              placeholder="Religion (Ex. ROMAN CATHOLIC)"
-              value={form.religion}
-              onChange={(e) => handleInputChange(form.id, "religion", e.target.value)}
-              className="px-4 py-3 bg-gray-600 text-white rounded-lg"
-            />
-
-            <input
-              type="text"
-              placeholder="Community Group (Ex. MANDAYA)"
-              value={form.communityGroup}
-              onChange={(e) => handleInputChange(form.id, "communityGroup", e.target.value)}
-              className="px-4 py-3 bg-gray-600 text-white rounded-lg"
+              value={form.familyPlanning}
+              onChange={(e) => handleInputChange(form.id, "familyPlanning", e.target.value)}
+              className="w-full px-4 py-3 bg-gray-600 text-white rounded-lg"
+              required
             />
           </div>
 
+          {/* Education + Religion + Community Group */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <p className="text-sm text-gray-400">Educational Attainment *</p>
+              <select
+                value={form.educationalAttainment}
+                onChange={(e) => handleInputChange(form.id, "educationalAttainment", e.target.value)}
+                className="w-full px-4 py-3 bg-gray-600 text-white rounded-lg"
+                required
+              >
+                <option value="">Select</option>
+                {[
+                  "None",
+                  "Elementary Level",
+                  "Elementary Graduate",
+                  "High School Level",
+                  "High School Graduate",
+                  "ALS",
+                  "Senior High School Level",
+                  "Senior High School Graduate",
+                  "Vocational",
+                  "College Level",
+                  "College Graduate",
+                  "Postgraduate",
+                ].map((x) => (
+                  <option key={x} value={x}>
+                    {x}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <p className="text-sm text-gray-400">Religion (Ex. ROMAN CATHOLIC) *</p>
+              <input
+                type="text"
+                value={form.religion}
+                onChange={(e) => handleInputChange(form.id, "religion", e.target.value)}
+                className="w-full px-4 py-3 bg-gray-600 text-white rounded-lg"
+                required
+              />
+            </div>
+            <div>
+              <p className="text-sm text-gray-400">Community Group (Ex. MANDAYA) *</p>
+              <input
+                type="text"
+                value={form.communityGroup}
+                onChange={(e) => handleInputChange(form.id, "communityGroup", e.target.value)}
+                className="w-full px-4 py-3 bg-gray-600 text-white rounded-lg"
+                required
+              />
+            </div>
+          </div>
+
           {/* Occupation */}
-          <input
-            type="text"
-            placeholder="Occupation (Ex. FARMER)"
-            value={form.occupation}
-            onChange={(e) => handleInputChange(form.id, "occupation", e.target.value)}
-            className="w-full px-4 py-3 bg-gray-600 text-white rounded-lg"
-          />
+          <div>
+            <p className="text-sm text-gray-400">Occupation (Ex. FARMER) *</p>
+            <input
+              type="text"
+              value={form.occupation}
+              onChange={(e) => handleInputChange(form.id, "occupation", e.target.value)}
+              className="w-full px-4 py-3 bg-gray-600 text-white rounded-lg"
+              required
+            />
+          </div>
 
           {/* 4Ps + IP + Toilet */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <select
-              value={form.fourPs}
-              onChange={(e) => handleInputChange(form.id, "fourPs", e.target.value)}
-              className="px-4 py-3 bg-gray-600 text-white rounded-lg"
-            >
-              <option value="">4Ps</option>
-              <option value="NHTS 4Ps">NHTS 4Ps</option>
-              <option value="NHTS Non 4Ps">NHTS Non 4Ps</option>
-              <option value="Non-NHTS">Non-NHTS</option>
-            </select>
-
-            <select
-              value={form.ipHousehold}
-              onChange={(e) => handleInputChange(form.id, "ipHousehold", e.target.value)}
-              className="px-4 py-3 bg-gray-600 text-white rounded-lg"
-            >
-              <option value="">IP Household</option>
-              <option value="Y">Y</option>
-              <option value="N">N</option>
-            </select>
-
-            <select
-              value={form.haveToilet}
-              onChange={(e) => handleInputChange(form.id, "haveToilet", e.target.value)}
-              className="px-4 py-3 bg-gray-600 text-white rounded-lg"
-            >
-              <option value="">Have Toilet</option>
-              <option value="Y">Y</option>
-              <option value="N">N</option>
-            </select>
+            <div>
+              <p className="text-sm text-gray-400">4Ps *</p>
+              <select
+                value={form.fourPs}
+                onChange={(e) => handleInputChange(form.id, "fourPs", e.target.value)}
+                className="w-full px-4 py-3 bg-gray-600 text-white rounded-lg"
+                required
+              >
+                <option value="">Select</option>
+                <option value="NHTS 4Ps">NHTS 4Ps</option>
+                <option value="NHTS Non 4Ps">NHTS Non 4Ps</option>
+                <option value="Non-NHTS">Non-NHTS</option>
+              </select>
+            </div>
+            <div>
+              <p className="text-sm text-gray-400">IP Household *</p>
+              <select
+                value={form.ipHousehold}
+                onChange={(e) => handleInputChange(form.id, "ipHousehold", e.target.value)}
+                className="w-full px-4 py-3 bg-gray-600 text-white rounded-lg"
+                required
+              >
+                <option value="">Select</option>
+                <option value="Y">Y</option>
+                <option value="N">N</option>
+              </select>
+            </div>
+            <div>
+              <p className="text-sm text-gray-400">Have Toilet *</p>
+              <select
+                value={form.haveToilet}
+                onChange={(e) => handleInputChange(form.id, "haveToilet", e.target.value)}
+                className="w-full px-4 py-3 bg-gray-600 text-white rounded-lg"
+                required
+              >
+                <option value="">Select</option>
+                <option value="Y">Y</option>
+                <option value="N">N</option>
+              </select>
+            </div>
           </div>
 
           {/* MRF + Garden + Smoker */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <select
-              value={form.mrfSegregation}
-              onChange={(e) => handleInputChange(form.id, "mrfSegregation", e.target.value)}
-              className="px-4 py-3 bg-gray-600 text-white rounded-lg"
-            >
-              <option value="">MRF Segregation</option>
-              <option value="Y">Y</option>
-              <option value="N">N</option>
-            </select>
-
-            <select
-              value={form.garden}
-              onChange={(e) => handleInputChange(form.id, "garden", e.target.value)}
-              className="px-4 py-3 bg-gray-600 text-white rounded-lg"
-            >
-              <option value="">Garden</option>
-              <option value="Y">Y</option>
-              <option value="N">N</option>
-            </select>
-
-            <select
-              value={form.smoker}
-              onChange={(e) => handleInputChange(form.id, "smoker", e.target.value)}
-              className="px-4 py-3 bg-gray-600 text-white rounded-lg"
-            >
-              <option value="">Smoker</option>
-              <option value="Y">Y</option>
-              <option value="N">N</option>
-            </select>
+            <div>
+              <p className="text-sm text-gray-400">MRF Segregation *</p>
+              <select
+                value={form.mrfSegregation}
+                onChange={(e) => handleInputChange(form.id, "mrfSegregation", e.target.value)}
+                className="w-full px-4 py-3 bg-gray-600 text-white rounded-lg"
+                required
+              >
+                <option value="">Select</option>
+                <option value="Y">Y</option>
+                <option value="N">N</option>
+              </select>
+            </div>
+            <div>
+              <p className="text-sm text-gray-400">Garden *</p>
+              <select
+                value={form.garden}
+                onChange={(e) => handleInputChange(form.id, "garden", e.target.value)}
+                className="w-full px-4 py-3 bg-gray-600 text-white rounded-lg"
+                required
+              >
+                <option value="">Select</option>
+                <option value="Y">Y</option>
+                <option value="N">N</option>
+              </select>
+            </div>
+            <div>
+              <p className="text-sm text-gray-400">Smoker *</p>
+              <select
+                value={form.smoker}
+                onChange={(e) => handleInputChange(form.id, "smoker", e.target.value)}
+                className="w-full px-4 py-3 bg-gray-600 text-white rounded-lg"
+                required
+              >
+                <option value="">Select</option>
+                <option value="Y">Y</option>
+                <option value="N">N</option>
+              </select>
+            </div>
           </div>
 
           {/* Classification */}
-          <select
-            value={form.classification}
-            onChange={(e) => handleInputChange(form.id, "classification", e.target.value)}
-            className="w-full px-4 py-3 bg-gray-600 text-white rounded-lg"
-          >
-            <option value="">Classification</option>
-            {[
-              "WRA",
-              "PWD",
-              "Senior Citizen",
-              "N/A",
-              "Pregnant",
-              "Postpartum",
-              "Newborn",
-            ].map((x) => (
-              <option value={x} key={x}>
-                {x}
-              </option>
-            ))}
-          </select>
+          <div>
+            <p className="text-sm text-gray-400">Classification *</p>
+            <select
+              value={form.classification}
+              onChange={(e) => handleInputChange(form.id, "classification", e.target.value)}
+              className="w-full px-4 py-3 bg-gray-600 text-white rounded-lg"
+              required
+            >
+              <option value="">Select</option>
+              {[
+                "WRA",
+                "PWD",
+                "Senior Citizen",
+                "N/A",
+                "Pregnant",
+                "Postpartum",
+                "Newborn",
+              ].map((x) => (
+                <option value={x} key={x}>
+                  {x}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {/* Buttons */}

@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
@@ -192,6 +194,10 @@ export default function UpdateDataFormPage() {
 
       <div className="border-b border-gray-600 mb-8" />
 
+      <p className="text-gray-400">NOTE: Use UPPERCASE letters when filling out the form.</p>
+      <br />
+      <br />
+
       <div className="space-y-8 max-w-6xl mx-auto">
         {members.map((member, index) => (
           <div key={member.id} className="space-y-6">
@@ -199,7 +205,7 @@ export default function UpdateDataFormPage() {
 
             {/* PUROK */}
             <div>
-              <label className="text-xs text-gray-400">Purok</label>
+              <label className="text-xs text-gray-400">Purok *</label>
               <select
                 value={member.purok}
                 onChange={(e) =>
@@ -219,7 +225,7 @@ export default function UpdateDataFormPage() {
             {/* NAMES */}
             <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
               <div>
-                <label className="text-xs text-gray-400">Surname (Ex. DELA CRUZ)</label>
+                <label className="text-xs text-gray-400">Surname (Ex. DELA CRUZ) *</label>
                 <input
                   type="text"
                   value={member.lastName}
@@ -230,7 +236,7 @@ export default function UpdateDataFormPage() {
                 />
               </div>
               <div>
-                <label className="text-xs text-gray-400">Given Name (Ex. JUAN)</label>
+                <label className="text-xs text-gray-400">Given Name (Ex. JUAN) *</label>
                 <input
                   type="text"
                   value={member.firstName}
@@ -241,7 +247,7 @@ export default function UpdateDataFormPage() {
                 />
               </div>
               <div>
-                <label className="text-xs text-gray-400">Middle Name (Ex. SANTOS)</label>
+                <label className="text-xs text-gray-400">Middle Name (Ex. SANTOS) *</label>
                 <input
                   type="text"
                   value={member.middleName}
@@ -278,7 +284,7 @@ export default function UpdateDataFormPage() {
             {/* AGE • SEX • CIVIL STATUS */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="text-xs text-gray-400">Age (Ex. 25)</label>
+                <label className="text-xs text-gray-400">Age (Ex. 25) *</label>
                 <input
                   type="text"
                   value={member.age}
@@ -290,7 +296,7 @@ export default function UpdateDataFormPage() {
               </div>
 
               <div>
-                <label className="text-xs text-gray-400">Sex</label>
+                <label className="text-xs text-gray-400">Sex *</label>
                 <select
                   value={member.sex}
                   onChange={(e) =>
@@ -306,7 +312,7 @@ export default function UpdateDataFormPage() {
               </div>
 
               <div>
-                <label className="text-xs text-gray-400">Civil Status (Ex. MARRIED)</label>
+                <label className="text-xs text-gray-400">Civil Status (Ex. MARRIED) *</label>
                 <select
                   value={member.civilStatus}
                   onChange={(e) =>
@@ -325,7 +331,7 @@ export default function UpdateDataFormPage() {
             {/* BIRTHDATE • BIRTHPLACE */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs text-gray-400">Birthdate (Ex. 01/01/2000)</label>
+                  <label className="text-xs text-gray-400">Birthdate (Ex. 01/01/2000) *</label>
                   <input
                     type="date"
                     value={member.birthdate ?? ""}
@@ -352,7 +358,7 @@ export default function UpdateDataFormPage() {
             {/* FAMILY PLANNING • EDUCATION • OCCUPATION */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="text-xs text-gray-400">Family Planning (Ex. NONE)</label>
+                <label className="text-xs text-gray-400">Family Planning (Ex. NONE) *</label>
                 <input
                   type="text"
                   value={member.familyPlanning}
@@ -369,7 +375,7 @@ export default function UpdateDataFormPage() {
 
               <div>
                 <label className="text-xs text-gray-400">
-                  Educational Attainment (Ex. COLLEGE GRADUATE)
+                  Educational Attainment (Ex. COLLEGE GRADUATE) *
                 </label>
                 <input
                   type="text"
@@ -386,7 +392,7 @@ export default function UpdateDataFormPage() {
               </div>
 
               <div>
-                <label className="text-xs text-gray-400">Occupation (Ex. FARMER)</label>
+                <label className="text-xs text-gray-400">Occupation (Ex. FARMER) *</label>
                 <input
                   type="text"
                   value={member.occupation}
@@ -401,7 +407,7 @@ export default function UpdateDataFormPage() {
             {/* RELIGION • COMMUNITY */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="text-xs text-gray-400">Religion (Ex. ROMAN CATHOLIC)</label>
+                <label className="text-xs text-gray-400">Religion (Ex. ROMAN CATHOLIC) *</label>
                 <input
                   type="text"
                   value={member.religion}
@@ -414,7 +420,7 @@ export default function UpdateDataFormPage() {
 
               <div>
                 <label className="text-xs text-gray-400">
-                  Community Group (Ex. BISAYA)
+                  Community Group (Ex. BISAYA) *
                 </label>
                 <input
                   type="text"
@@ -462,7 +468,7 @@ export default function UpdateDataFormPage() {
 
               {/* SMOKER */}
               <div>
-                <label className="text-xs text-gray-400">Smoker</label>
+                <label className="text-xs text-gray-400">Smoker *</label>
                 <input
                   type="text"
                   value={member.smoker}
@@ -475,7 +481,7 @@ export default function UpdateDataFormPage() {
 
               {/* CLASSIFICATION */}
               <div>
-                <label className="text-xs text-gray-400">Classification</label>
+                <label className="text-xs text-gray-400">Classification *</label>
                 <select
                   value={member.classification}
                   onChange={(e) =>
